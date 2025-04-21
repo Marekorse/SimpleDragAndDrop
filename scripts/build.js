@@ -2,7 +2,6 @@ import esbuild from 'esbuild';
 import fs from 'fs';
 import path from 'path';
 
-
 async function getFiles(dir) {
     let files = [];
     const items = await fs.promises.readdir(dir, { withFileTypes: true });
