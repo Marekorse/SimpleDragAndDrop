@@ -1,0 +1,47 @@
+{
+  "name": "@marekorse/simple-drag-and-drop",
+  "version": "0.0.1",
+  "description": "Simple Drag and Drop is a simple, lightweight, and flexible package for implementing drag & drop interactions between HTML elements. It allows for intuitive element rearrangement within a single container or across multiple lists, without any dependencies on external frameworks.",
+  "main": "dist/SimpleDragAndDrop.js",
+  "type": "module",
+  "exports": {
+    ".": "./dist/SimpleDragAndDrop.js"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Marekorse/SimpleDragAndDrop.git"
+  },
+  "author": "Marek Korsepa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Marekorse/SimpleDragAndDrop/issues"
+  },
+  "homepage": "https://github.com/Marekorse/SimpleDragAndDrop#readme",
+  "keywords": [
+    "drag",
+    "drop",
+    "drag-and-drop",
+    "reorder",
+    "html",
+    "dom",
+    "list",
+    "draggable",
+    "vanilla-js",
+    "typescript",
+    "no-dependencies",
+    "lightweight",
+    "simple",
+    "ui",
+    "ux",
+    "frontend"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "esbuild": "^0.25.2",
+    "typescript": "^5.8.3"
+  }
+}
