@@ -1,6 +1,6 @@
 {
   "name": "@marekorse/simple-drag-and-drop",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Simple Drag and Drop is a simple, lightweight, and flexible package for implementing drag & drop interactions between HTML elements. It allows for intuitive element rearrangement within a single container or across multiple lists, without any dependencies on external frameworks.",
   "main": "dist/SimpleDragAndDrop.js",
   "type": "module",
@@ -8,8 +8,7 @@
     ".": "./dist/SimpleDragAndDrop.js"
   },
   "scripts": {
-    "build": "node scripts/build.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node scripts/build.js"
   },
   "repository": {
     "type": "git",
