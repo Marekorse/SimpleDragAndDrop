@@ -191,7 +191,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 target,
                 (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute)
             )
-            const list: HTMLElement | null = document.querySelector(`[${this.listAttribute}=${listItem?.getAttribute(this.listIdAttribute)}]`)
+
+            const list: HTMLElement | null = this.searchList(String(listItem?.getAttribute(this.listIdAttribute)))
 
             if (listItem && list && (!list.hasAttribute(this.listHasActionBtnAttribute) || target.hasAttribute(this.listActionBtnAttribute))) {
                 event.preventDefault()
@@ -627,7 +628,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param listId
      */
     searchList = (listId: string): HTMLElement | null => {
-        return document.querySelector(`[${this.listAttribute}=${listId}]`)
+        return document.querySelector(`[${this.listAttribute}="${listId}"]`)
     }
 
     /**
