@@ -1,4 +1,4 @@
-name: @marekorse/simple-drag-and-drop
+name: "@marekorse/simple-drag-and-drop"
 
 on:
   release:
