@@ -41,7 +41,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     private readonly listSharedAttribute: string
     private readonly listAttribute: string
     private readonly listHasActionBtnAttribute: string
-    private readonly listActionBtnAttribute: string
+    private readonly listItemActionBtnAttribute: string
     private readonly listDragDisabledAttribute: string
     private readonly listDropDisabledAttribute: string
     private readonly listItemAttribute: string
@@ -94,11 +94,11 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         this.listSharedAttribute = 'data-list-shared'
         this.listAttribute = 'data-list'
         this.listHasActionBtnAttribute = 'data-list-has-action-btn'
-        this.listActionBtnAttribute = 'data-list-action-btn'
         this.listDragDisabledAttribute = 'data-list-drop-disabled'
         this.listDropDisabledAttribute = 'data-list-drag-disabled'
         this.listItemAttribute = 'data-list-item'
         this.listIdAttribute = 'data-list-id'
+        this.listItemActionBtnAttribute = 'data-list-item-action-btn'
 
         //AUTO SCROLLER
         this.autoScroller = new AutoScroller(500, 50)
@@ -194,7 +194,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
             const list: HTMLElement | null = this.searchList(String(listItem?.getAttribute(this.listIdAttribute)))
 
-            if (listItem && list && (!list.hasAttribute(this.listHasActionBtnAttribute) || target.hasAttribute(this.listActionBtnAttribute))) {
+            if (listItem && list && (!list.hasAttribute(this.listHasActionBtnAttribute) || target.hasAttribute(this.listItemActionBtnAttribute))) {
                 event.preventDefault()
 
                 if (!this.elementsAnimator.isMoved(listItem) && !list.hasAttribute(this.listDragDisabledAttribute) && listItem.parentElement) {
@@ -347,10 +347,10 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
             // FIRE EVENT
             if (updatedList.length > 0) {
-                this.emit('updated', updatedList)
+                this.emit('itemsUpdated', updatedList)
             }
 
-            this.emit('dragEnd', updatedList)
+            this.emit('dragEnd')
         }
     }
 
