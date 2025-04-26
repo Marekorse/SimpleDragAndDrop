@@ -6,7 +6,13 @@
 import AutoScroller from './AutoScroller';
 import { ElementsAnimator } from './ElementsAnimator';
 import { createEmitter } from './Emitter';
-import { addMultipleClasses, getActualPosition, getElementsFromIndexes, removeMultipleClasses, searchParentElement } from './Helpers';
+import {
+    addMultipleClasses,
+    getActualPosition,
+    getElementsFromIndexes,
+    removeMultipleClasses,
+    searchParentElement
+} from './Helpers';
 import { EmitterInterface, SDDOptionsInterface, SimpleDragAndDropInterface } from './Interfaces';
 
 export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInterface {
@@ -79,7 +85,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             offsetX: 0,
             offsetY: 0,
             directionY: 0,
-            directionX: 0,
+            directionX: 0
         };
 
         this.originalStyle = '';
@@ -126,7 +132,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         const onTouchStart = (e: TouchEvent) => this.onDragStart(e, e.touches[0].clientX, e.touches[0].clientY);
         document.addEventListener('touchstart', onTouchStart, {
-            passive: false,
+            passive: false
         });
 
         const onDragEnd = () => this.onDragEnd();
@@ -135,13 +141,13 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         const onDragMove = (e: MouseEvent) => this.onDragMove(e, e.target, e.clientX, e.clientY);
         document.addEventListener('mousemove', onDragMove, {
-            passive: false,
+            passive: false
         });
 
         const onTouchMove = (e: TouchEvent) =>
           this.onDragMove(e, document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY), e.touches[0].clientX, e.touches[0].clientY);
         document.addEventListener('touchmove', onTouchMove, {
-            passive: false,
+            passive: false
         });
 
         //SAVE LISTENERS REFERENCE TO VARIABLE
@@ -155,8 +161,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 touchend: onDragEnd,
 
                 mousemove: onDragMove,
-                onTouchmove: onTouchMove,
-            },
+                onTouchmove: onTouchMove
+            }
         });
     };
 
@@ -189,7 +195,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         if (!this.draggedElement && target instanceof HTMLElement) {
             const listItem: HTMLElement | null = searchParentElement(
               target,
-              (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute),
+              (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute)
             );
 
             const list: HTMLElement | null = this.searchList(String(listItem?.getAttribute(this.listIdAttribute)));
@@ -229,7 +235,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             const item = searchParentElement(
               target,
               (el) =>
-                el.hasAttribute(this.listItemAttribute) || el.hasAttribute(this.listAttribute) || el.hasAttribute(this.previewElementAttribute),
+                el.hasAttribute(this.listItemAttribute) || el.hasAttribute(this.listAttribute) || el.hasAttribute(this.previewElementAttribute)
             );
 
 
@@ -250,7 +256,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                         } else {
                             this.replaceElement(y, item, previewElement);
                         }
-                        this.enteredTarget = previewElement
+                        this.enteredTarget = previewElement;
 
                         this.emit('dragEnter', item);
                     } else {
@@ -267,14 +273,14 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             if (this.draggedElementPosition.x !== x) {
                 Object.assign(this.draggedElementPosition, {
                     x: x,
-                    directionX: x > this.draggedElementPosition.x ? 1 : -1,
+                    directionX: x > this.draggedElementPosition.x ? 1 : -1
                 });
             }
 
             if (this.draggedElementPosition.y !== y) {
                 Object.assign(this.draggedElementPosition, {
                     y: y,
-                    directionY: y > this.draggedElementPosition.y ? 1 : -1,
+                    directionY: y > this.draggedElementPosition.y ? 1 : -1
                 });
             }
 
@@ -353,22 +359,23 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
       previewElOriginalList: HTMLElement,
       previewElement: HTMLElement,
       draggedElement: HTMLElement,
-      draggedElementOriginalIndex: number,
+      draggedElementOriginalIndex: number
     ): void => {
         const listItems = Array.from(this.searchListItems(previewElList) as NodeList);
         const draggedElIndex = listItems.indexOf(draggedElement);
 
-        let updatedList: Node[] = [];
+        const updatedList: Array<any> = [];
 
         if (previewElList.getAttribute(this.listAttribute) !== previewElement.getAttribute(this.previewElementOriginalListAttribute)) {
             const previewElOriginalListItems = Array.from(this.searchListItems(previewElOriginalList) as NodeList);
             const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList);
 
-            updatedList = [...previewElOriginalListItems, ...previewElListItems];
+            updatedList.push(previewElOriginalListItems, previewElListItems);
+
         } else if (draggedElIndex !== draggedElementOriginalIndex) {
             const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList);
 
-            updatedList = [...previewElListItems];
+            updatedList.push(previewElListItems);
         }
 
         // FIRE EVENT
@@ -508,7 +515,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             x: x,
             y: y,
             offsetX: x - targetRect.x + marginLeft,
-            offsetY: y - targetRect.y + marginTop,
+            offsetY: y - targetRect.y + marginTop
         });
 
         const listItems = Array.from(this.searchListItems(list) as NodeList);
@@ -592,7 +599,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             'margin-right',
             'margin-bottom',
             'margin-left',
-            'box-sizing',
+            'box-sizing'
         ];
 
         for (const prop of sizeProperties) {
@@ -639,7 +646,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             offsetX: 0,
             offsetY: 0,
             directionY: 0,
-            directionX: 0,
+            directionX: 0
         };
     };
 
