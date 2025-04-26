@@ -6,6 +6,8 @@ interface SimpleDragAndDropInterface {
     onDragStart(event: MouseEvent | TouchEvent, clientX: number, clientY: number): void;
     onDragMove(event: MouseEvent | TouchEvent, target: EventTarget | null, clientX: number, clientY: number): void;
     onDragEnd(): void;
+    replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement): void;
+    checksElementsUpdates(previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number): void;
     placeElementToList(draggedElement: HTMLElement, y: number, list: HTMLElement): void;
     replaceElement(clientY: number, target: HTMLElement, draggedElement: HTMLElement): void;
     createDraggedElement(list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement;
@@ -100,6 +102,23 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
      *
      */
     onDragEnd: () => void;
+    /**
+     * Replace preview element with dragged element
+     *
+     * @param previewElement
+     * @param draggedElement
+     */
+    replacePreviewElementWithDraggedElement: (previewElement: HTMLElement, draggedElement: HTMLElement) => void;
+    /**
+     * Checks if elements positions have changed, and dispatches an event if a modification is detected.
+     *
+     * @param previewElList
+     * @param previewElOriginalList
+     * @param previewElement
+     * @param draggedElement
+     * @param draggedElementOriginalIndex
+     */
+    checksElementsUpdates: (previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number) => void;
     /**
      * calculation of where the element should be placed in the list
      *

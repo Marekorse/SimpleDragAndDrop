@@ -257,8 +257,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                         if (!item.hasAttribute(this.listAttribute) && ((directionY === 1 && y < draggedY) || (directionY === -1 && y > draggedY))) {
                             this.replaceElement(y, item, previewEl)
                         }
-
-                        this.emit('dragOver', item)
                     }
                 }
             }
@@ -280,7 +278,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             this.draggedElementPosition.x = x
             this.draggedElementPosition.y = y
 
-            this.emit('dragMove', target)
+            this.emit('dragOver', item)
             this.autoScroller.shouldEnableAutoScroller(x, y)
         }
     }
@@ -295,6 +293,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const draggedEl = this.draggedElement as HTMLElement
         const previewEl = this.previewElement as HTMLElement
         const previewElList = this.previewElementList as HTMLElement
+        const previewElOriginalList = this.previewElementOriginalList as HTMLElement
+        const draggedElementOriginalIndex = this.draggedElementOriginalIndex as number
 
         if (draggedEl && previewEl) {
             const computedStyle = window.getComputedStyle(previewEl)
@@ -306,51 +306,71 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 const marginTop = parseFloat(computedStyle.marginTop)
 
                 this.elementsAnimator.animate(draggedEl, position.x - marginLeft, position.y - marginTop, () => {
-                    previewEl.replaceWith(draggedEl)
-                    draggedEl.setAttribute(this.listIdAttribute, String(previewEl.getAttribute(this.listIdAttribute)))
-
-                    if (this.draggedElementClass) {
-                        removeMultipleClasses(draggedEl, this.draggedElementClass)
-                    }
-
-                    draggedEl.style.cssText = this.originalStyle
+                    this.replacePreviewElementWithDraggedElement(previewEl, draggedEl)
+                    this.checksElementsUpdates(previewElList, previewElOriginalList, previewEl, draggedEl, draggedElementOriginalIndex)
                 })
             } else {
-                previewEl.replaceWith(draggedEl)
-                draggedEl.setAttribute(this.listIdAttribute, String(previewEl.getAttribute(this.listIdAttribute)))
-
-                if (this.draggedElementClass) {
-                    removeMultipleClasses(draggedEl, this.draggedElementClass)
-                }
-
-                draggedEl.style.cssText = this.originalStyle
-            }
-
-            // CHECK IF ITEM POSITIONS WERE CHANGED
-            const listItems = Array.from(this.searchListItems(previewElList) as NodeList)
-            const draggedElIndex = listItems.indexOf(draggedEl)
-
-            let updatedList: Node[] = []
-
-            if (previewElList.getAttribute(this.listAttribute) !== previewEl.getAttribute(this.previewElementOriginalListAttribute)) {
-                const previewElOriginalListItems = Array.from(this.searchListItems(this.previewElementOriginalList!) as NodeList)
-                const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList)
-
-                updatedList = [...previewElOriginalListItems, ...previewElListItems]
-            } else if (draggedElIndex !== this.draggedElementOriginalIndex) {
-                const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList)
-
-                updatedList = [...previewElListItems]
+                this.replacePreviewElementWithDraggedElement(previewEl, draggedEl)
+                this.checksElementsUpdates(previewElList, previewElOriginalList, previewEl, draggedEl, draggedElementOriginalIndex)
             }
 
             this.resetDraggingState()
-
-            // FIRE EVENT
-            if (updatedList.length > 0) {
-                this.emit('itemsUpdated', updatedList)
-            }
-
             this.emit('dragEnd')
+        }
+    }
+
+    /**
+     * Replace preview element with dragged element
+     *
+     * @param previewElement
+     * @param draggedElement
+     */
+    replacePreviewElementWithDraggedElement = (previewElement: HTMLElement, draggedElement: HTMLElement) :void => {
+        previewElement.replaceWith(draggedElement)
+        draggedElement.setAttribute(this.listIdAttribute, String(previewElement.getAttribute(this.listIdAttribute)))
+
+        if (this.draggedElementClass) {
+            removeMultipleClasses(draggedElement, this.draggedElementClass)
+        }
+
+        draggedElement.style.cssText = this.originalStyle
+    }
+
+    /**
+     * Checks if elements positions have changed, and dispatches an event if a modification is detected.
+     *
+     * @param previewElList
+     * @param previewElOriginalList
+     * @param previewElement
+     * @param draggedElement
+     * @param draggedElementOriginalIndex
+     */
+    checksElementsUpdates = (
+      previewElList: HTMLElement,
+      previewElOriginalList: HTMLElement,
+      previewElement: HTMLElement,
+      draggedElement: HTMLElement,
+      draggedElementOriginalIndex: number
+    ) :void => {
+        const listItems = Array.from(this.searchListItems(previewElList) as NodeList)
+        const draggedElIndex = listItems.indexOf(draggedElement)
+
+        let updatedList: Node[] = []
+
+        if (previewElList.getAttribute(this.listAttribute) !== previewElement.getAttribute(this.previewElementOriginalListAttribute)) {
+            const previewElOriginalListItems = Array.from(this.searchListItems(previewElOriginalList) as NodeList)
+            const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList)
+
+            updatedList = [...previewElOriginalListItems, ...previewElListItems]
+        } else if (draggedElIndex !== draggedElementOriginalIndex) {
+            const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList)
+
+            updatedList = [...previewElListItems]
+        }
+
+        // FIRE EVENT
+        if (updatedList.length > 0) {
+            this.emit('itemsUpdated', updatedList)
         }
     }
 

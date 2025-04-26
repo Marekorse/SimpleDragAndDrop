@@ -1,71 +1,75 @@
 /** ----- Interfaces ----- **/
 
 export interface SimpleDragAndDropInterface {
-    options: SDDOptionsInterface
+  options: SDDOptionsInterface;
 
-    init(): void
+  init(): void;
 
-    clearEventListeners(): void
+  clearEventListeners(): void;
 
-    onDragStart(event: MouseEvent | TouchEvent, clientX: number, clientY: number): void
+  onDragStart(event: MouseEvent | TouchEvent, clientX: number, clientY: number): void;
 
-    onDragMove(event: MouseEvent | TouchEvent, target: EventTarget | null, clientX: number, clientY: number): void
+  onDragMove(event: MouseEvent | TouchEvent, target: EventTarget | null, clientX: number, clientY: number): void;
 
-    onDragEnd(): void
+  onDragEnd(): void;
 
-    placeElementToList(draggedElement: HTMLElement, y: number, list: HTMLElement): void
+  replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement): void;
 
-    replaceElement(clientY: number, target: HTMLElement, draggedElement: HTMLElement): void
+  checksElementsUpdates(previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number): void;
 
-    createDraggedElement(list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement
+  placeElementToList(draggedElement: HTMLElement, y: number, list: HTMLElement): void;
 
-    createPreviewElement(list: HTMLElement, referenceElement: HTMLElement): HTMLElement
+  replaceElement(clientY: number, target: HTMLElement, draggedElement: HTMLElement): void;
 
-    resetDraggingState(): void
+  createDraggedElement(list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement;
 
-    updateDraggedElPosition(draggedEl: HTMLElement, x: number, y: number): void
+  createPreviewElement(list: HTMLElement, referenceElement: HTMLElement): HTMLElement;
 
-    searchList(listId: string): HTMLElement | null
+  resetDraggingState(): void;
 
-    searchListItems(list: HTMLElement): NodeListOf<HTMLElement> | null
+  updateDraggedElPosition(draggedEl: HTMLElement, x: number, y: number): void;
 
-    savePreviewElPosition(previewEl: HTMLElement): void
+  searchList(listId: string): HTMLElement | null;
+
+  searchListItems(list: HTMLElement): NodeListOf<HTMLElement> | null;
+
+  savePreviewElPosition(previewEl: HTMLElement): void;
 }
 
 export interface SDDOptionsInterface {
-    animationDuration?: number
-    draggedElementStyle?: Partial<CSSStyleDeclaration>
-    draggedElementClass?: string
-    previewElementStyle?: Partial<CSSStyleDeclaration>
-    previewElementClass?: string
+  animationDuration?: number;
+  draggedElementStyle?: Partial<CSSStyleDeclaration>;
+  draggedElementClass?: string;
+  previewElementStyle?: Partial<CSSStyleDeclaration>;
+  previewElementClass?: string;
 }
 
 export interface ElementsAnimatorInterface {
-    animationDuration: number
-    oldPositionAttribute: string
-    animationAttribute: string
-    isMovedAttribute: string
-    ignoreAttribute: string
+  animationDuration: number;
+  oldPositionAttribute: string;
+  animationAttribute: string;
+  isMovedAttribute: string;
+  ignoreAttribute: string;
 
-    isMoved(...el: HTMLElement[]): boolean
+  isMoved(...el: HTMLElement[]): boolean;
 
-    removeAnimation(target: HTMLElement): void
+  removeAnimation(target: HTMLElement): void;
 
-    saveElementPosition(el: HTMLElement, position: { x: number; y: number; w: number; h: number }): HTMLElement
+  saveElementPosition(el: HTMLElement, position: { x: number; y: number; w: number; h: number }): HTMLElement;
 
-    moveToSavedPosition(el: HTMLElement): void
+  moveToSavedPosition(el: HTMLElement): void;
 
-    animate(el: HTMLElement, x: number, y: number, after?: () => void): void
+  animate(el: HTMLElement, x: number, y: number, after?: () => void): void;
 
-    animateElementsMovement(elements: HTMLElement[], movement: () => void): void
+  animateElementsMovement(elements: HTMLElement[], movement: () => void): void;
 }
 
 export interface EmitterInterface {
-    on(eventName: string, listener: (data: any) => void): void
+  on(eventName: string, listener: (data: any) => void): void;
 
-    emit(eventName: string, data: any): void
+  emit(eventName: string, data: any): void;
 }
 
 export interface EmitterEventInterface {
-    [key: string]: ((data: any) => void)[]
+  [key: string]: ((data: any) => void)[];
 }
