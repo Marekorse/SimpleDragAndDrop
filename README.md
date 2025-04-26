@@ -127,9 +127,8 @@ npm install simple-drag-and-drop
 | Event           | Args                         | Description                                                                 |
 |-----------------|------------------------------|-----------------------------------------------------------------------------|
 | `dragStart`     | `ListItem`                   | Triggered when dragging starts on a list item.                             |
-| `dragMove`      | `MouseEvent`, `ListItem`     | Fired continuously while dragging. Useful for tracking position or target. |
 | `dragEnter`     | `ListItem` or `List`         | Triggered when a dragged item enters another `List` or `ListItem.            |
-| `dragOver`      | `ListItem` or `List`         | Fires while a dragged item is over `List` or `ListItem`.                    |
+| `dragOver`      | `Target`                     | Fires while a dragged item is over `List` or `ListItem`.                    |
 | `dragEnd`       | —                            | Called when the drag operation completes (drop).                 |
 | `itemsUpdated`  | `ListItem[]`                 | Triggered after list items are reordered or moved between lists.                |
 
