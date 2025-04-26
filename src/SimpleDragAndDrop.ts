@@ -382,35 +382,38 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param list
      */
     placeElementToList = (previewEl: HTMLElement, y: number, list: HTMLElement): void => {
-        const listItems = Array.from(this.searchListItems(list) as NodeList) as HTMLElement[]
-        const previewElList = this.previewElementList as HTMLElement
-        const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList) as HTMLElement[]
-        const previewElIndex = previewElListItems.indexOf(previewEl)
-        const previewElElementsForAnimation = getElementsFromIndexes(previewElListItems, previewElIndex, previewElListItems.length - 1)
-        const lastElementPosition = getActualPosition(listItems[listItems.length - 1])
+        const listItems = Array.from(this.searchListItems(list) as NodeList) as HTMLElement[];
+        const previewElList = this.previewElementList as HTMLElement;
+        const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList) as HTMLElement[];
+        const previewElIndex = previewElListItems.indexOf(previewEl);
+        const previewElElementsForAnimation = getElementsFromIndexes(previewElListItems, previewElIndex, previewElListItems.length - 1);
 
         if (listItems.length === 0) {
             this.elementsAnimator.animateElementsMovement(previewElElementsForAnimation, () => {
-                list.insertBefore(previewEl, null)
-                this.savePreviewElPosition(previewEl)
-            })
+                list.insertBefore(previewEl, null);
+                this.savePreviewElPosition(previewEl);
+            });
 
-            previewEl.setAttribute(this.listIdAttribute, String(list.getAttribute(this.listAttribute)))
-            this.previewElementList = list
+            previewEl.setAttribute(this.listIdAttribute, String(list.getAttribute(this.listAttribute)));
+            this.previewElementList = list;
 
-            return
-        } else if (y > lastElementPosition.y + lastElementPosition.h) {
-            this.elementsAnimator.animateElementsMovement(previewElElementsForAnimation, () => {
-                list.appendChild(previewEl)
-                this.savePreviewElPosition(previewEl)
-            })
-
-            previewEl.setAttribute(this.listIdAttribute, String(list.getAttribute(this.listAttribute)))
-            this.previewElementList = list
-
-            return
+            return;
         }
-    }
+
+        const lastElementPosition = getActualPosition(listItems[listItems.length - 1]);
+
+        if (y > lastElementPosition.y + lastElementPosition.h) {
+            this.elementsAnimator.animateElementsMovement(previewElElementsForAnimation, () => {
+                list.appendChild(previewEl);
+                this.savePreviewElPosition(previewEl);
+            });
+
+            previewEl.setAttribute(this.listIdAttribute, String(list.getAttribute(this.listAttribute)));
+            this.previewElementList = list;
+
+            return;
+        }
+    };
 
     /**
      *  Placing the dragged element in the list based on direction and position

@@ -79,6 +79,11 @@ npm install simple-drag-and-drop
    // initialization
    const simpleDragAndDrop = new SimpleDragAndDrop(options);
    simpleDragAndDrop.init();
+
+	
+   simpleDragAndDrop.on('itemsUpdated', (listItems) => {
+        //Your logic
+   })
 </script>
 ```
 
