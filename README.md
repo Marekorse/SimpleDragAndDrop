@@ -82,7 +82,7 @@ npm install simple-drag-and-drop
 
 	
    simpleDragAndDrop.on('itemsUpdated', (listItems) => {
-        //Your logic
+        //Handle
    })
 </script>
 ```

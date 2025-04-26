@@ -122,19 +122,19 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
     /**
      * calculation of where the element should be placed in the list
      *
-     * @param previewEl
+     * @param previewElement
      * @param y
      * @param list
      */
-    placeElementToList: (previewEl: HTMLElement, y: number, list: HTMLElement) => void;
+    placeElementToList: (previewElement: HTMLElement, y: number, list: HTMLElement) => void;
     /**
      *  Placing the dragged element in the list based on direction and position
      *
      * @param clientY
      * @param listItem
-     * @param previewEl
+     * @param previewElement
      */
-    replaceElement: (clientY: number, listItem: HTMLElement, previewEl: HTMLElement) => void;
+    replaceElement: (clientY: number, listItem: HTMLElement, previewElement: HTMLElement) => void;
     /**
      * Create dragged element
      *
@@ -157,11 +157,11 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
     /**
      * Update position for dragged element.
      *
-     * @param draggedEl
+     * @param draggedElement
      * @param x
      * @param y
      */
-    updateDraggedElPosition: (draggedEl: HTMLElement, x: number, y: number) => void;
+    updateDraggedElPosition: (draggedElement: HTMLElement, x: number, y: number) => void;
     /**
      * Search List Element
      *
@@ -177,9 +177,9 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
     /**
      * Save current position for preview element
      *
-     * @param previewEl
+     * @param previewElement
      */
-    savePreviewElPosition: (previewEl: HTMLElement) => void;
+    savePreviewElPosition: (previewElement: HTMLElement) => void;
 }
 
 export { SimpleDragAndDrop };
