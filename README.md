@@ -89,11 +89,11 @@ npm install simple-drag-and-drop
 
 | Parameter                | Type          | Description                                                                 |
 |--------------------------|---------------|-----------------------------------------------------------------------------|
-| `animationDuration`      | `number`      | Duration of the reorder animation in milliseconds.                            |
-| `draggedElementStyle`    | `object`      | Inline CSS styles applied to the dragged element.                          |
-| `draggedElementClass`    | `string`      | CSS class(es) applied to the dragged element.                              |
-| `previewElementStyle`    | `object`      | Inline CSS styles applied to the preview placeholder.                      |
-| `previewElementClass`    | `string`      | CSS class(es) applied to the preview placeholder element.                  |
+| `animationDuration`      | `number`      | Duration of the reorder animation in milliseconds.                          |
+| `draggedElementStyle`    | `object`      | Inline CSS styles applied to the dragged element.                           |
+| `draggedElementClass`    | `string`      | CSS class(es) applied to the dragged element.                               |
+| `previewElementStyle`    | `object`      | Inline CSS styles applied to the preview placeholder.                       |
+| `previewElementClass`    | `string`      | CSS class(es) applied to the preview placeholder element.                   |
 
 
 
@@ -101,22 +101,22 @@ npm install simple-drag-and-drop
 
 #### List
 
-| Parameter                    | Required | Type     | Description                                                                 |
-|-----------------------------|----------|----------|-----------------------------------------------------------------------------|
-| `data-list`                 | ✅ Yes   | `string` | Identifier for a draggable list container.                                  |
-| `data-list-shared`          | ⚠️ No    | `string` | ID used to group multiple lists together for shared drag-and-drop.         |
-| `data-list-has-action-btn`  | ⚠️ No    | —        | Enables detection of action buttons inside list items. . Must be used in combination with `data-list-item-action-btn`.|                     |
-| `data-list-drop-disabled`   | ⚠️ No    | —        | Disables dropping into the list.                                           |
-| `data-list-drag-disabled`   | ⚠️ No    | —        | Disables dragging items from the list.                                     |
+| Parameter                   | Required  | Type     | Description                                                                                                            |
+|-----------------------------|-----------|----------|------------------------------------------------------------------------------------------------------------------------|
+| `data-list`                 | ✅ Yes   | `string` | Identifier for a draggable list container.                                                                             |
+| `data-list-shared`          | ⚠️ No    | `string` | ID used to group multiple lists together for shared drag-and-drop.                                                     |
+| `data-list-has-action-btn`  | ⚠️ No    | —        | Enables detection of action buttons inside list items. . Must be used in combination with `data-list-item-action-btn`. |                     
+| `data-list-drop-disabled`   | ⚠️ No    | —        | Disables dropping into the list.                                                                                       |
+| `data-list-drag-disabled`   | ⚠️ No    | —        | Disables dragging items from the list.                                                                                 |
 
 
 
 #### List item
 
-| Parameter                    | Required | Type     | Description                                                                 |
-|-----------------------------|----------|----------|-----------------------------------------------------------------------------|
-| `data-list-item`            | ✅ Yes   | —        | Attribute used to identify a list item element.                            |
-| `data-list-id`              | ✅ Yes   | `string` | Attribute used to identify a list element.                        |
+| Parameter                   | Required  | Type     | Description                                                                 
+|-----------------------------|-----------|----------|-----------------------------------------------------------------------------------------------------------------------|
+| `data-list-item`            | ✅ Yes   | —        | Attribute used to identify a list item element.                                                                       |
+| `data-list-id`              | ✅ Yes   | `string` | Attribute used to identify a list element.                                                                            |
 | `data-list-item-action-btn` | ⚠️ No    | `string` | Marks an element inside a list item as an action button. Must be used in combination with `data-list-has-action-btn`. |
 
 
@@ -126,11 +126,11 @@ npm install simple-drag-and-drop
 
 | Event           | Args                         | Description                                                                 |
 |-----------------|------------------------------|-----------------------------------------------------------------------------|
-| `dragStart`     | `ListItem`                   | Triggered when dragging starts on a list item.                             |
-| `dragEnter`     | `ListItem` or `List`         | Triggered when a dragged item enters another `List` or `ListItem.            |
-| `dragOver`      | `Target`                     | Fires while a dragged item is over `List` or `ListItem`.                    |
-| `dragEnd`       | —                            | Called when the drag operation completes (drop).                 |
-| `itemsUpdated`  | `ListItem[]`                 | Triggered after list items are reordered or moved between lists.                |
+| `dragStart`     | `ListItem`                   | Triggered when dragging starts on a list item.                              |
+| `dragOver`      | `ListItem` or `List`         | Fired continuously while dragging. Useful for tracking position or target.  |
+| `dragEnter`     | `ListItem` or `List`         | Triggered when a dragged item enters another `List` or `ListItem.           |
+| `dragEnd`       | —                            | Called when the drag operation completes (drop).                            |
+| `itemsUpdated`  | `ListItem[]`                 | Triggered after list items are reordered or moved between lists.            |
 
 
  
