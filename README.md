@@ -1,6 +1,7 @@
 # Simple drag and drop
 
-A lightweight drag-and-drop system based on elements data attributes with animations and customizable styles.
+This lightweight library allows you to quickly implement drag-and-drop functionality for HTML elements, offering customizable visuals for dragged and preview elements — all without any external dependencies.
+
 ## 💡 Overview
 
 This library allows you to quickly implement drag-and-drop functionality for HTML elements with customizable visuals for dragged and preview elements.
@@ -11,6 +12,7 @@ This library allows you to quickly implement drag-and-drop functionality for HTM
 - 🏷️ Based on data-attributes
 - 🎬 Customizable animation duration
 - 🎨 Stylable dragged and preview elements
+- 🧲 Automatically scrolls the container when dragging items near the edges, making it easy to move them across long or overflowing lists.
 
 ## ⚙️ Installation
 Step 1 — Configure .npmrc
