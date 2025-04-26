@@ -20,7 +20,6 @@ interface SDDOptionsInterface {
     animationDuration?: number;
     draggedElementStyle?: Partial<CSSStyleDeclaration>;
     draggedElementClass?: string;
-    previewElement?: HTMLElement;
     previewElementStyle?: Partial<CSSStyleDeclaration>;
     previewElementClass?: string;
 }
@@ -52,7 +51,7 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
     private readonly listSharedAttribute;
     private readonly listAttribute;
     private readonly listHasActionBtnAttribute;
-    private readonly listActionBtnAttribute;
+    private readonly listItemActionBtnAttribute;
     private readonly listDragDisabledAttribute;
     private readonly listDropDisabledAttribute;
     private readonly listItemAttribute;

@@ -66,7 +66,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         this.previewElementClass = options.previewElementClass ?? ''
         this.draggedElementStyle = options.draggedElementStyle ?? null
         this.draggedElementClass = options.draggedElementClass ?? ''
-        this.previewElement = options.previewElement ?? null
+        this.previewElement = null
         this.previewElementList = null
         this.previewElementOriginalList = null
 
@@ -139,7 +139,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         })
 
         const onTouchMove = (e: TouchEvent) =>
-            this.onDragMove(e, document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY), e.touches[0].clientX, e.touches[0].clientY)
+          this.onDragMove(e, document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY), e.touches[0].clientX, e.touches[0].clientY)
         document.addEventListener('touchmove', onTouchMove, {
             passive: false,
         })
@@ -188,8 +188,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         if (!this.draggedElement && target instanceof HTMLElement) {
             const listItem: HTMLElement | null = searchParentElement(
-                target,
-                (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute)
+              target,
+              (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute)
             )
 
             const list: HTMLElement | null = this.searchList(String(listItem?.getAttribute(this.listIdAttribute)))
@@ -227,9 +227,9 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             this.updateDraggedElPosition(draggedEl, x, y)
 
             const item = searchParentElement(
-                target,
-                (el) =>
-                    el.hasAttribute(this.listItemAttribute) || el.hasAttribute(this.listAttribute) || el.hasAttribute(this.previewElementAttribute)
+              target,
+              (el) =>
+                el.hasAttribute(this.listItemAttribute) || el.hasAttribute(this.listAttribute) || el.hasAttribute(this.previewElementAttribute)
             )
 
             if (item && item !== previewEl && !this.elementsAnimator.isMoved(item, previewEl)) {
@@ -473,6 +473,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const computedStyle = window.getComputedStyle(draggedElement as HTMLElement)
         const marginLeft = parseFloat(computedStyle.marginLeft)
         const marginTop = parseFloat(computedStyle.marginTop)
+        const listStyleType = computedStyle.getPropertyValue('list-style-type')
 
         //calculate offset
         const targetRect = draggedElement.getBoundingClientRect()
@@ -493,11 +494,15 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         //save original attributes
         this.originalStyle = draggedElement.style.cssText
 
-        //optional style attributes
+        //set style attributes
         const rect: DOMRect = draggedElement.getBoundingClientRect()
         draggedElement.style.width = `${rect.width}px`
         draggedElement.style.height = `${rect.height}px`
         draggedElement.style.zIndex = String(999999)
+
+        if (listStyleType) {
+            draggedElement.style.listStyleType = listStyleType
+        }
 
         //apply custom styles
         if (this.draggedElementStyle) {

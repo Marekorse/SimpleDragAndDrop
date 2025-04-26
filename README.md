@@ -92,7 +92,6 @@ npm install simple-drag-and-drop
 | `animationDuration`      | `number`      | Duration of the reorder animation in milliseconds.                            |
 | `draggedElementStyle`    | `object`      | Inline CSS styles applied to the dragged element.                          |
 | `draggedElementClass`    | `string`      | CSS class(es) applied to the dragged element.                              |
-| `previewElement`         | `HTMLElement` | Custom HTML element used as a visual preview during dragging.              |
 | `previewElementStyle`    | `object`      | Inline CSS styles applied to the preview placeholder.                      |
 | `previewElementClass`    | `string`      | CSS class(es) applied to the preview placeholder element.                  |
 

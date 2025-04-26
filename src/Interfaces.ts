@@ -36,7 +36,6 @@ export interface SDDOptionsInterface {
     animationDuration?: number
     draggedElementStyle?: Partial<CSSStyleDeclaration>
     draggedElementClass?: string
-    previewElement?: HTMLElement
     previewElementStyle?: Partial<CSSStyleDeclaration>
     previewElementClass?: string
 }
