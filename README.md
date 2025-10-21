@@ -28,7 +28,7 @@ Step 2 — Install the package
 
 ```bash
 # Install the package
-npm install simple-drag-and-drop
+npm install @marekorse/simple-drag-and-drop
 ```
 
 
@@ -146,3 +146,4 @@ npm install simple-drag-and-drop
 ## 📄 License
 
 MIT
+
