@@ -100,8 +100,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         this.listSharedAttribute = 'data-list-shared';
         this.listAttribute = 'data-list';
         this.listHasActionBtnAttribute = 'data-list-has-action-btn';
-        this.listDragDisabledAttribute = 'data-list-drop-disabled';
-        this.listDropDisabledAttribute = 'data-list-drag-disabled';
+        this.listDragDisabledAttribute = 'data-list-drag-disabled';
+        this.listDropDisabledAttribute = 'data-list-drop-disabled';
         this.listItemAttribute = 'data-list-item';
         this.listIdAttribute = 'data-list-id';
         this.listItemActionBtnAttribute = 'data-list-item-action-btn';
