@@ -7,20 +7,27 @@
  *
  * @param el
  * @param condition
+ * @param stopAt
  */
-export const searchParentElement = (el: EventTarget, condition: (el: HTMLElement) => boolean): HTMLElement | null => {
-    let currentTarget: any = el
+export const searchParentElement = (el: EventTarget, condition: (el: HTMLElement) => boolean, stopAt?: HTMLElement): HTMLElement | null => {
+    let currentTarget: any = el;
 
     while (currentTarget) {
-        if (currentTarget instanceof HTMLElement && condition(currentTarget)) {
-            return currentTarget
+        if (currentTarget instanceof HTMLElement) {
+            if (condition(currentTarget)) {
+                return currentTarget;
+            }
+            if (stopAt && currentTarget === stopAt) {
+                break;
+            }
+            currentTarget = currentTarget.parentElement;
+        } else {
+            break;
         }
-
-        currentTarget = (currentTarget as HTMLElement).parentElement
     }
 
-    return null
-}
+    return null;
+};
 
 /**
  * Get html element child nodes.
