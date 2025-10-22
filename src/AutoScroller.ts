@@ -60,7 +60,6 @@ export default class AutoScroller implements AutoScrollerInterface {
 
         if (el) {
             const elRect: DOMRect = el.getBoundingClientRect();
-            console.log(x , vw - this.scrollToPositionThreshold);
             if (x > vw - this.scrollToPositionThreshold) {
                 // viewport X axis →
                 this.getLastScrollableElementOnAxis('x', 'f', el, 1);
