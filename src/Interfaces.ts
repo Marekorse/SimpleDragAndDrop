@@ -13,7 +13,7 @@ export interface SimpleDragAndDropInterface {
 
   onDragEnd(): void;
 
-  replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement): void;
+  replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement,draggedElementOriginalStyle:string): void;
 
   checksElementsUpdates(previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number): void;
 

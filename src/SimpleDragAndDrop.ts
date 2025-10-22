@@ -304,6 +304,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const previewElList = this.previewElementList as HTMLElement;
         const previewElOriginalList = this.previewElementOriginalList as HTMLElement;
         const draggedElementOriginalIndex = this.draggedElementOriginalIndex as number;
+        const draggedElementOriginalStyle = this.originalStyle as string;
 
         if (draggedElement && previewElement) {
             const computedStyle = window.getComputedStyle(previewElement);
@@ -315,11 +316,11 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 const marginTop = parseFloat(computedStyle.marginTop);
 
                 this.elementsAnimator.animate(draggedElement, position.x - marginLeft, position.y - marginTop, () => {
-                    this.replacePreviewElementWithDraggedElement(previewElement, draggedElement);
+                    this.replacePreviewElementWithDraggedElement(previewElement, draggedElement,draggedElementOriginalStyle);
                     this.checksElementsUpdates(previewElList, previewElOriginalList, previewElement, draggedElement, draggedElementOriginalIndex);
                 });
             } else {
-                this.replacePreviewElementWithDraggedElement(previewElement, draggedElement);
+                this.replacePreviewElementWithDraggedElement(previewElement, draggedElement,draggedElementOriginalStyle);
                 this.checksElementsUpdates(previewElList, previewElOriginalList, previewElement, draggedElement, draggedElementOriginalIndex);
             }
 
@@ -333,8 +334,9 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param previewElement
      * @param draggedElement
+     * @param draggedElementOriginalStyle
      */
-    replacePreviewElementWithDraggedElement = (previewElement: HTMLElement, draggedElement: HTMLElement): void => {
+    replacePreviewElementWithDraggedElement = (previewElement: HTMLElement, draggedElement: HTMLElement,draggedElementOriginalStyle:string): void => {
         previewElement.replaceWith(draggedElement);
         draggedElement.setAttribute(this.listIdAttribute, String(previewElement.getAttribute(this.listIdAttribute)));
 
@@ -342,7 +344,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             removeMultipleClasses(draggedElement, this.draggedElementClass);
         }
 
-        draggedElement.style.cssText = this.originalStyle;
+        draggedElement.style.cssText = draggedElementOriginalStyle;
     };
 
     /**
@@ -530,9 +532,9 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         //set style attributes
         const rect: DOMRect = draggedElement.getBoundingClientRect();
-        draggedElement.style.width = `${rect.width}px`;
-        draggedElement.style.height = `${rect.height}px`;
-        draggedElement.style.zIndex = String(999999);
+        draggedElement.style.setProperty('width', `${rect.width}px`, 'important');
+        draggedElement.style.setProperty('height', `${rect.height}px`, 'important');
+        draggedElement.style.setProperty('z-index', '999999', 'important');
 
         if (listStyleType) {
             draggedElement.style.listStyleType = listStyleType;
