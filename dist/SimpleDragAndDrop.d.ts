@@ -6,7 +6,7 @@ interface SimpleDragAndDropInterface {
     onDragStart(event: MouseEvent | TouchEvent, clientX: number, clientY: number): void;
     onDragMove(event: MouseEvent | TouchEvent, target: EventTarget | null, clientX: number, clientY: number): void;
     onDragEnd(): void;
-    replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement): void;
+    replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalStyle: string): void;
     checksElementsUpdates(previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number): void;
     placeElementToList(draggedElement: HTMLElement, y: number, list: HTMLElement): void;
     replaceElement(clientY: number, target: HTMLElement, draggedElement: HTMLElement): void;
@@ -107,8 +107,9 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
      *
      * @param previewElement
      * @param draggedElement
+     * @param draggedElementOriginalStyle
      */
-    replacePreviewElementWithDraggedElement: (previewElement: HTMLElement, draggedElement: HTMLElement) => void;
+    replacePreviewElementWithDraggedElement: (previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalStyle: string) => void;
     /**
      * Checks if elements positions have changed, and dispatches an event if a modification is detected.
      *
