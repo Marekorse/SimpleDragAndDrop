@@ -202,13 +202,14 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
 
             if (listItem && list) {
-                event.preventDefault();
-
                 const actionBtnElement = list.hasAttribute(this.listHasActionBtnAttribute)
                     ? searchParentElement(target, (el) => el.hasAttribute(this.listItemActionBtnAttribute), listItem)
                     : null;
 
                 if (!this.elementsAnimator.isMoved(listItem) && !list.hasAttribute(this.listDragDisabledAttribute) && listItem.parentElement && (!list.hasAttribute(this.listHasActionBtnAttribute) || actionBtnElement)) {
+
+                    event.preventDefault();
+
                     this.previewElement = this.createPreviewElement(list, listItem);
                     this.draggedElement = this.createDraggedElement(list, listItem, clientX, clientY);
                     listItem.parentElement.insertBefore(this.previewElement, listItem);
