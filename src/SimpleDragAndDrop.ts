@@ -202,14 +202,13 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
 
             if (listItem && list) {
+                event.preventDefault();
+
                 const actionBtnElement = list.hasAttribute(this.listHasActionBtnAttribute)
                     ? searchParentElement(target, (el) => el.hasAttribute(this.listItemActionBtnAttribute), listItem)
                     : null;
 
                 if (!this.elementsAnimator.isMoved(listItem) && !list.hasAttribute(this.listDragDisabledAttribute) && listItem.parentElement && (!list.hasAttribute(this.listHasActionBtnAttribute) || actionBtnElement)) {
-
-                    event.preventDefault();
-
                     this.previewElement = this.createPreviewElement(list, listItem);
                     this.draggedElement = this.createDraggedElement(list, listItem, clientX, clientY);
                     listItem.parentElement.insertBefore(this.previewElement, listItem);
@@ -372,23 +371,18 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const listItems = Array.from(this.searchListItems(previewElList) as NodeList);
         const draggedElIndex = listItems.indexOf(draggedElement);
 
-        const updatedList: Array<any> = [];
-
         if (previewElList.getAttribute(this.listAttribute) !== previewElement.getAttribute(this.previewElementOriginalListAttribute)) {
-            const previewElOriginalListItems = Array.from(this.searchListItems(previewElOriginalList) as NodeList);
-            const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList);
+            const updatedList: Array<HTMLElement[]> = [];
+            const previewElOriginalListItems = Array.from(
+                this.searchListItems(previewElOriginalList) as NodeList
+            ) as HTMLElement[];
 
-            updatedList.push(previewElOriginalListItems, previewElListItems);
+            updatedList.push(previewElOriginalListItems);
+            updatedList.push(listItems as HTMLElement[]);
 
-        } else if (draggedElIndex !== draggedElementOriginalIndex) {
-            const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList);
-
-            updatedList.push(previewElListItems);
-        }
-
-        // FIRE EVENT
-        if (updatedList.length > 0) {
             this.emit('itemsUpdated', updatedList);
+        } else if (draggedElIndex !== draggedElementOriginalIndex) {
+            this.emit('itemsUpdated', listItems);
         }
     };
 
