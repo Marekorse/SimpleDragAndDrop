@@ -138,6 +138,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const onDragEnd = () => this.onDragEnd();
         document.addEventListener('mouseup', onDragEnd);
         document.addEventListener('touchend', onDragEnd);
+        document.addEventListener('touchcancel', onDragEnd);
 
         const onDragMove = (e: MouseEvent) => this.onDragMove(e, e.target, e.clientX, e.clientY);
         document.addEventListener('mousemove', onDragMove, {
@@ -161,7 +162,9 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 touchend: onDragEnd,
 
                 mousemove: onDragMove,
-                onTouchmove: onTouchMove
+                touchmove: onTouchMove,
+                touchcancel: onDragEnd,
+
             }
         });
     };
