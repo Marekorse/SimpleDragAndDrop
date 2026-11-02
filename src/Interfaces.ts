@@ -7,9 +7,9 @@ export interface SimpleDragAndDropInterface {
 
   clearEventListeners(): void;
 
-  onDragStart(event: MouseEvent | TouchEvent, clientX: number, clientY: number): void;
+  onDragStart(event: PointerEvent, clientX: number, clientY: number): void;
 
-  onDragMove(event: MouseEvent | TouchEvent, target: EventTarget | null, clientX: number, clientY: number): void;
+  onDragMove(event: PointerEvent, target: EventTarget | null, clientX: number, clientY: number): void;
 
   onDragEnd(): void;
 

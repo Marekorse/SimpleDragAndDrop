@@ -127,44 +127,35 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      */
     init = (): void => {
         //CREATE EVENT LISTENERS
-        const onDragStart = (e: MouseEvent) => this.onDragStart(e, e.clientX, e.clientY);
-        document.addEventListener('mousedown', onDragStart);
-
-        const onTouchStart = (e: TouchEvent) => this.onDragStart(e, e.touches[0].clientX, e.touches[0].clientY);
-        document.addEventListener('touchstart', onTouchStart, {
-            passive: false
-        });
-
+        const onDragStart = (e: PointerEvent) => this.onDragStart(e, e.clientX, e.clientY);
         const onDragEnd = () => this.onDragEnd();
-        document.addEventListener('mouseup', onDragEnd);
-        document.addEventListener('touchend', onDragEnd);
-        document.addEventListener('touchcancel', onDragEnd);
+        const onDragMove = (e: PointerEvent) => this.onDragMove(e, document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY);
 
-        const onDragMove = (e: MouseEvent) => this.onDragMove(e, e.target, e.clientX, e.clientY);
-        document.addEventListener('mousemove', onDragMove, {
-            passive: false
-        });
+        const preventDefaultWhileDragging = (e: Event) => {
+            if (this.draggedElement) {
+                e.preventDefault();
+            }
+        };
 
-        const onTouchMove = (e: TouchEvent) =>
-            this.onDragMove(e, document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY), e.touches[0].clientX, e.touches[0].clientY);
-        document.addEventListener('touchmove', onTouchMove, {
-            passive: false
-        });
+        document.addEventListener('pointerdown', onDragStart);
+        document.addEventListener('pointerup', onDragEnd);
+        document.addEventListener('pointercancel', onDragEnd);
+        document.addEventListener('pointermove', onDragMove, {passive: false});
+        document.addEventListener('touchmove', preventDefaultWhileDragging, {passive: false});
+        document.addEventListener('selectstart', preventDefaultWhileDragging);
+        document.addEventListener('dragstart', preventDefaultWhileDragging);
 
         //SAVE LISTENERS REFERENCE TO VARIABLE
         this.elementsWithListeners.push({
             el: document,
             events: {
-                mousedown: onDragStart,
-                touchstart: onTouchStart,
-
-                mouseup: onDragEnd,
-                touchend: onDragEnd,
-
-                mousemove: onDragMove,
-                touchmove: onTouchMove,
-                touchcancel: onDragEnd,
-
+                pointerdown: onDragStart,
+                pointerup: onDragEnd,
+                pointercancel: onDragEnd,
+                pointermove: onDragMove,
+                touchmove: preventDefaultWhileDragging,
+                selectstart: preventDefaultWhileDragging,
+                dragstart: preventDefaultWhileDragging
             }
         });
     };
@@ -187,11 +178,11 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param clientX
      * @param clientY
      */
-    onDragStart(event: MouseEvent | TouchEvent, clientX: number, clientY: number): void {
+    onDragStart(event: PointerEvent, clientX: number, clientY: number): void {
         const target = event.target;
 
         //left mouse
-        if (event instanceof MouseEvent && event.button !== 0) {
+        if (event.button !== 0) {
             return;
         }
 
@@ -232,7 +223,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param x
      * @param y
      */
-    onDragMove(event: MouseEvent | TouchEvent, target: EventTarget | HTMLElement | null, x: number, y: number) {
+    onDragMove(event: PointerEvent, target: EventTarget | HTMLElement | null, x: number, y: number) {
         const draggedElement = this.draggedElement as HTMLElement;
         const previewElement = this.previewElement as HTMLElement;
 
