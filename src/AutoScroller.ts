@@ -83,7 +83,7 @@ export default class AutoScroller implements AutoScrollerInterface {
                 this.getLastScrollableElementOnAxis('y', 'f', el, 7);
             } else if (y - elRect.y > elRect.height - this.scrollToPositionThreshold) {
                 // element Y axis ↓
-                this.scrollElement('y', 'b', this.getFirstFullyVisibleElementOnAxis('y', el), 8);
+                this.scrollElement('y', 'f', this.getFirstFullyVisibleElementOnAxis('y', el), 8);
             } else {
                 this.stopScroller();
             }
