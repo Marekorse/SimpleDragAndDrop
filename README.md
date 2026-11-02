@@ -78,7 +78,6 @@ npm install @marekorse/simple-drag-and-drop
 
    // initialization
    const simpleDragAndDrop = new SimpleDragAndDrop(options);
-   simpleDragAndDrop.init();
 
 	
    simpleDragAndDrop.on('itemsUpdated', (listItems) => {
