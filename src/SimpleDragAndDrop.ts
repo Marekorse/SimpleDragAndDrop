@@ -237,6 +237,11 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param y
      */
     onDragMove(event: PointerEvent, x: number, y: number) {
+
+        if (!this.pendingDragStart && !this.draggedElement) {
+            return;
+        }
+
         const pendingDragStart = this.pendingDragStart;
 
         if (pendingDragStart) {
