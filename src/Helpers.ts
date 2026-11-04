@@ -13,8 +13,8 @@ export const searchParentElement = (el: EventTarget, condition: (el: HTMLElement
     let currentTarget: any = el;
 
     while (currentTarget) {
-        if (currentTarget instanceof HTMLElement) {
-            if (condition(currentTarget)) {
+        if (currentTarget instanceof Element) {
+            if (currentTarget instanceof HTMLElement && condition(currentTarget)) {
                 return currentTarget;
             }
             if (stopAt && currentTarget === stopAt) {
@@ -123,4 +123,26 @@ export const addMultipleClasses = (element: HTMLElement, classString: string): v
 export const removeMultipleClasses = (element: HTMLElement, classString: string): void => {
     const classes = classString.split(/\s+/).filter(Boolean)
     element.classList.remove(...classes)
+}
+
+/**
+ * Apply inline styles to element
+ *
+ * Supports camelCase keys (backgroundColor) as well as kebab-case keys and custom properties (background-color, --my-var)
+ *
+ * @param element
+ * @param styles
+ */
+export const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclaration>): void => {
+    for (const [key, value] of Object.entries(styles)) {
+        if (typeof value !== 'string' && typeof value !== 'number') {
+            continue
+        }
+
+        if (key.includes('-')) {
+            element.style.setProperty(key, String(value))
+        } else if (key in element.style) {
+            (element.style as any)[key] = String(value)
+        }
+    }
 }

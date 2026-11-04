@@ -8,6 +8,7 @@ import {ElementsAnimator} from './ElementsAnimator';
 import {createEmitter} from './Emitter';
 import {
     addMultipleClasses,
+    applyStyles,
     getActualPosition,
     getElementsFromIndexes,
     removeMultipleClasses,
@@ -200,7 +201,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             return;
         }
 
-        if (!this.draggedElement && !this.pendingDragStart && target instanceof HTMLElement) {
+        if (!this.draggedElement && !this.pendingDragStart && target instanceof Element) {
             const listItem: HTMLElement | null = searchParentElement(
                 target,
                 (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute)
@@ -571,11 +572,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         //apply custom styles
         if (this.draggedElementStyle) {
-            for (const [key, value] of Object.entries(this.draggedElementStyle)) {
-                if (draggedElement.style.hasOwnProperty(key)) {
-                    draggedElement.style.setProperty(key, value as string);
-                }
-            }
+            applyStyles(draggedElement, this.draggedElementStyle);
         }
 
         //apply custom classes
@@ -644,11 +641,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         //apply custom styles
         if (this.previewElementStyle) {
-            for (const [key, value] of Object.entries(this.previewElementStyle)) {
-                if (el.style.hasOwnProperty(key)) {
-                    el.style.setProperty(key, value as string);
-                }
-            }
+            applyStyles(el, this.previewElementStyle);
         }
 
         return el;
