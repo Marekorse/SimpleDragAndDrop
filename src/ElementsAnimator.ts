@@ -3,7 +3,6 @@ import { getActualPosition } from './Helpers'
 
 export class ElementsAnimator implements ElementsAnimatorInterface {
     public readonly animationDuration: number
-    public readonly oldPositionAttribute: string
     public readonly animationAttribute: string
     public readonly isMovedAttribute: string
     public readonly ignoreAttribute: string
@@ -12,7 +11,6 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
      * Constructor
      *
      * @param animationDuration
-     * @param oldPositionAttribute
      * @param animationAttribute
      * @param isMovedAttribute
      * @param ignoreAttribute
@@ -21,11 +19,9 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
         animationDuration: number = 500,
         ignoreAttribute: string = 'data-el-ignore',
         animationAttribute: string = 'data-el-animation-att',
-        isMovedAttribute: string = 'data-el-moved-att',
-        oldPositionAttribute: string = 'data-el-old-pos'
+        isMovedAttribute: string = 'data-el-moved-att'
     ) {
         this.animationDuration = animationDuration
-        this.oldPositionAttribute = oldPositionAttribute
         this.animationAttribute = animationAttribute
         this.isMovedAttribute = isMovedAttribute
         this.ignoreAttribute = ignoreAttribute
@@ -60,25 +56,12 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
     }
 
     /**
-     * save the current position of the element
+     * Check if the element position intersects the viewport
      *
-     * @param el
      * @param position
      */
-    saveElementPosition = (el: HTMLElement, position: { x: number; y: number; w: number; h: number }): HTMLElement => {
-        el.setAttribute(this.oldPositionAttribute, JSON.stringify(position))
-        return el
-    }
-
-    /**
-     * move element to saved position
-     *
-     * @param el
-     */
-    moveToSavedPosition = (el: HTMLElement): void => {
-        const position = getActualPosition(el)
-        const oldPosition = JSON.parse(el.getAttribute(this.oldPositionAttribute)!)
-        el.style.transform = `translate3d(${oldPosition.x - position.x}px, ${oldPosition.y - position.y}px, 0px)`
+    isInViewport = (position: { x: number; y: number; w: number; h: number }): boolean => {
+        return position.x + position.w > 0 && position.x < window.innerWidth && position.y + position.h > 0 && position.y < window.innerHeight
     }
 
     /**
@@ -102,7 +85,6 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
 
         const animation = setTimeout(() => {
             this.removeAnimation(el)
-            el.removeAttribute(this.oldPositionAttribute)
             el.removeAttribute(this.isMovedAttribute)
             el.removeAttribute(this.animationAttribute)
             after?.()
@@ -118,27 +100,37 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
      * @param movement
      */
     animateElementsMovement = (elements: HTMLElement[], movement: () => void): void => {
-        //SAVE ELEMENTS POSITIONS
+        const oldPositions = elements.map((el) => getActualPosition(el))
+
         elements.forEach((el) => {
-            this.saveElementPosition(el, getActualPosition(el))
             if (!el.hasAttribute(this.ignoreAttribute)) {
-                this.saveElementPosition(el, getActualPosition(el))
                 this.removeAnimation(el)
             }
         })
 
-        //RUN ACTION
         movement()
 
-        //PREPARE A START ANIMATION
-        elements.forEach((target): void => {
-            target.setAttribute(this.isMovedAttribute, '')
-            this.moveToSavedPosition(target)
+        const newPositions = elements.map((el) => getActualPosition(el))
 
-            //repaint
-            target.offsetHeight
+        const animatedElements = elements.filter((el, i) => {
+            const oldPosition = oldPositions[i]
+            const newPosition = newPositions[i]
 
-            this.animate(target)
+            if (!this.isInViewport(oldPosition) && !this.isInViewport(newPosition)) {
+                return false
+            }
+
+            el.setAttribute(this.isMovedAttribute, '')
+            el.style.transform = `translate3d(${oldPosition.x - newPosition.x}px, ${oldPosition.y - newPosition.y}px, 0px)`
+
+            return true
         })
+
+        if (animatedElements.length === 0) {
+            return
+        }
+
+        document.body.offsetHeight
+        animatedElements.forEach((el) => this.animate(el))
     }
 }

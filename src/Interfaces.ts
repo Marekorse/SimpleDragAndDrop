@@ -47,7 +47,6 @@ export interface SDDOptionsInterface {
 
 export interface ElementsAnimatorInterface {
   animationDuration: number;
-  oldPositionAttribute: string;
   animationAttribute: string;
   isMovedAttribute: string;
   ignoreAttribute: string;
@@ -56,9 +55,7 @@ export interface ElementsAnimatorInterface {
 
   removeAnimation(target: HTMLElement): void;
 
-  saveElementPosition(el: HTMLElement, position: { x: number; y: number; w: number; h: number }): HTMLElement;
-
-  moveToSavedPosition(el: HTMLElement): void;
+  isInViewport(position: { x: number; y: number; w: number; h: number }): boolean;
 
   animate(el: HTMLElement, x: number, y: number, after?: () => void): void;
 
