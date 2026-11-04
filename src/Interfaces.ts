@@ -31,6 +31,8 @@ export interface SimpleDragAndDropInterface {
 
   searchList(listId: string): HTMLElement | null;
 
+  searchListOfItem(listItem: HTMLElement): HTMLElement | null;
+
   searchListItems(list: HTMLElement): NodeListOf<HTMLElement> | null;
 }
 

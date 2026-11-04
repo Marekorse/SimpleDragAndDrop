@@ -11,7 +11,7 @@ export interface AutoScrollerInterface {
     speed?: number;
     threshold?: number;
 
-    shouldEnableAutoScroller(x: number, y: number): void;
+    shouldEnableAutoScroller(x: number, y: number, el?: Element | null): void;
 
     getViewportScrollTarget(x: number, y: number, el: Element): ScrollTarget | null;
 
@@ -65,9 +65,9 @@ export default class AutoScroller implements AutoScrollerInterface {
      *
      * @param x
      * @param y
+     * @param el element under the pointer, if already known
      */
-    shouldEnableAutoScroller(x: number, y: number): void {
-        const el: Element | null = document.elementFromPoint(x, y);
+    shouldEnableAutoScroller(x: number, y: number, el: Element | null = document.elementFromPoint(x, y)): void {
 
         if (el) {
             const target = this.getViewportScrollTarget(x, y, el) ?? this.getContainerScrollTarget(x, y, el);

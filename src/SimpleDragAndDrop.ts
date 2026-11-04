@@ -206,10 +206,13 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute)
             );
 
-            const list: HTMLElement | null = this.searchList(String(listItem?.getAttribute(this.listIdAttribute)));
+            if (!listItem) {
+                return;
+            }
 
+            const list: HTMLElement | null = this.searchListOfItem(listItem);
 
-            if (listItem && list) {
+            if (list) {
                 const actionBtnElement = list.hasAttribute(this.listHasActionBtnAttribute)
                     ? searchParentElement(target, (el) => el.hasAttribute(this.listItemActionBtnAttribute), listItem)
                     : null;
@@ -276,7 +279,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 const dragEnter = previewElement !== item && this.enteredTarget !== item;
 
                 this.enteredTarget = item;
-                const list = item.hasAttribute(this.listAttribute) ? item : this.searchList(String(item.getAttribute(this.listIdAttribute)))!;
+                const list = item.hasAttribute(this.listAttribute) ? item : this.searchListOfItem(item)!;
                 const isShared = previewElement.getAttribute(this.previewElementListSharedAttribute) === list.getAttribute(this.listSharedAttribute);
                 const dropDisabled = list.hasAttribute(this.listDropDisabledAttribute);
 
@@ -320,7 +323,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             this.draggedElementPosition.y = y;
 
             this.emit('dragOver', item);
-            this.autoScroller.shouldEnableAutoScroller(x, y);
+            this.autoScroller.shouldEnableAutoScroller(x, y, target);
         }
     }
 
@@ -461,7 +464,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      */
     replaceElement = (clientY: number, listItem: HTMLElement, previewElement: HTMLElement): void => {
         const listItemParentEl = listItem.parentNode as HTMLElement;
-        const list = this.searchList(String(listItem.getAttribute(this.listIdAttribute))) as HTMLElement;
+        const list = this.searchListOfItem(listItem) as HTMLElement;
         const listItems = Array.from(this.searchListItems(list) as NodeList) as HTMLElement[];
         const listItemIndex = listItems.indexOf(listItem);
         const previewElList = this.previewElementList as HTMLElement;
@@ -683,6 +686,19 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      */
     searchList = (listId: string): HTMLElement | null => {
         return document.querySelector(`[${this.listAttribute}="${listId}"]`);
+    };
+
+    /**
+     * Search List Element of list item
+     *
+     * Searches only the item ancestors, falls back to the whole document when the item is outside its list.
+     *
+     * @param listItem
+     */
+    searchListOfItem = (listItem: HTMLElement): HTMLElement | null => {
+        const listId = String(listItem.getAttribute(this.listIdAttribute));
+
+        return listItem.closest<HTMLElement>(`[${this.listAttribute}="${listId}"]`) ?? this.searchList(listId);
     };
 
     /**
