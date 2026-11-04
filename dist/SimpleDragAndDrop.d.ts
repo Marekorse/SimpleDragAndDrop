@@ -15,8 +15,8 @@ interface SimpleDragAndDropInterface {
     resetDraggingState(): void;
     updateDraggedElPosition(draggedEl: HTMLElement, x: number, y: number): void;
     searchList(listId: string): HTMLElement | null;
+    searchListOfItem(listItem: HTMLElement): HTMLElement | null;
     searchListItems(list: HTMLElement): NodeListOf<HTMLElement> | null;
-    savePreviewElPosition(previewEl: HTMLElement): void;
 }
 interface SDDOptionsInterface {
     animationDuration?: number;
@@ -52,7 +52,6 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
     private readonly previewElementAttribute;
     private readonly previewElementOriginalListAttribute;
     private readonly previewElementListSharedAttribute;
-    private readonly previewElementDestinationPositionAttribute;
     private readonly listSharedAttribute;
     private readonly listAttribute;
     private readonly listHasActionBtnAttribute;
@@ -172,17 +171,21 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
      */
     searchList: (listId: string) => HTMLElement | null;
     /**
+     * Search List Element of list item
+     *
+     * Searches only the item ancestors, falls back to the whole document when the item is outside its list.
+     *
+     * @param listItem
+     */
+    searchListOfItem: (listItem: HTMLElement) => HTMLElement | null;
+    /**
      * Search List items Element
+     *
+     * Only items belonging to the list (by list id), items of nested lists are excluded.
      *
      * @param list
      */
     searchListItems: (list: HTMLElement) => NodeListOf<HTMLElement> | null;
-    /**
-     * Save current position for preview element
-     *
-     * @param previewElement
-     */
-    savePreviewElPosition: (previewElement: HTMLElement) => void;
 }
 
 export { SimpleDragAndDrop };
