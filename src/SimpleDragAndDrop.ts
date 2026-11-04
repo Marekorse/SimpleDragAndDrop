@@ -562,6 +562,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         //set style attributes
         const rect: DOMRect = draggedElement.getBoundingClientRect();
+        draggedElement.style.setProperty('box-sizing', 'border-box', 'important');
         draggedElement.style.setProperty('width', `${rect.width}px`, 'important');
         draggedElement.style.setProperty('height', `${rect.height}px`, 'important');
         draggedElement.style.setProperty('z-index', '999999', 'important');
