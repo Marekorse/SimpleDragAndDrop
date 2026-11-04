@@ -32,8 +32,6 @@ export interface SimpleDragAndDropInterface {
   searchList(listId: string): HTMLElement | null;
 
   searchListItems(list: HTMLElement): NodeListOf<HTMLElement> | null;
-
-  savePreviewElPosition(previewEl: HTMLElement): void;
 }
 
 export interface SDDOptionsInterface {

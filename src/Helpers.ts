@@ -146,3 +146,18 @@ export const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclar
         }
     }
 }
+
+/**
+ * Get element layout position without the in-progress transform animation
+ *
+ * The transition always ends at translate(0), so this is the position where the element will end up.
+ *
+ * @param target
+ */
+export const getLayoutPosition = (target: HTMLElement): { x: number; y: number } => {
+    const rect = target.getBoundingClientRect()
+    const transform = getComputedStyle(target).transform
+    const matrix = transform && transform !== 'none' ? new DOMMatrix(transform) : null
+
+    return { x: rect.left - (matrix?.m41 ?? 0), y: rect.top - (matrix?.m42 ?? 0) }
+}

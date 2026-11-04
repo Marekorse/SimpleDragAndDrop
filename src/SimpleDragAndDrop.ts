@@ -11,6 +11,7 @@ import {
     applyStyles,
     getActualPosition,
     getElementsFromIndexes,
+    getLayoutPosition,
     removeMultipleClasses,
     searchParentElement
 } from './Helpers';
@@ -50,7 +51,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     private readonly previewElementAttribute: string;
     private readonly previewElementOriginalListAttribute: string;
     private readonly previewElementListSharedAttribute: string;
-    private readonly previewElementDestinationPositionAttribute: string;
     private readonly listSharedAttribute: string;
     private readonly listAttribute: string;
     private readonly listHasActionBtnAttribute: string;
@@ -105,7 +105,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         this.previewElementAttribute = 'data-preview';
         this.previewElementOriginalListAttribute = 'data-prev-orig-list';
         this.previewElementListSharedAttribute = 'data-prev-list-shared';
-        this.previewElementDestinationPositionAttribute = 'data-prev-destination-position';
         this.listSharedAttribute = 'data-list-shared';
         this.listAttribute = 'data-list';
         this.listHasActionBtnAttribute = 'data-list-has-action-btn';
@@ -252,7 +251,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             this.previewElement = this.createPreviewElement(list, listItem);
             this.draggedElement = this.createDraggedElement(list, listItem, pendingDragStart.x, pendingDragStart.y);
             listItem.parentElement.insertBefore(this.previewElement, listItem);
-            this.savePreviewElPosition(this.previewElement);
             document.body.appendChild(this.draggedElement);
             this.enteredTarget = this.previewElement;
             this.emit('dragStart', listItem);
@@ -345,8 +343,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             const computedStyle = window.getComputedStyle(previewElement);
 
             if (this.animationDuration !== 0) {
-                const previewElPosition = String(previewElement.getAttribute(this.previewElementDestinationPositionAttribute));
-                const position = previewElPosition ? JSON.parse(previewElPosition) : getActualPosition(previewElement);
+                const position = getLayoutPosition(previewElement);
                 const marginLeft = parseFloat(computedStyle.marginLeft);
                 const marginTop = parseFloat(computedStyle.marginTop);
 
@@ -433,7 +430,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         if (listItems.length === 0) {
             this.elementsAnimator.animateElementsMovement(previewElElementsForAnimation, () => {
                 list.insertBefore(previewElement, null);
-                this.savePreviewElPosition(previewElement);
             });
 
             previewElement.setAttribute(this.listIdAttribute, String(list.getAttribute(this.listAttribute)));
@@ -447,7 +443,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         if (y > lastElementPosition.y + lastElementPosition.h) {
             this.elementsAnimator.animateElementsMovement(previewElElementsForAnimation, () => {
                 list.appendChild(previewElement);
-                this.savePreviewElPosition(previewElement);
             });
 
             previewElement.setAttribute(this.listIdAttribute, String(list.getAttribute(this.listAttribute)));
@@ -481,7 +476,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
             this.elementsAnimator.animateElementsMovement(AllElementForAnimation, () => {
                 listItemParentEl.insertBefore(previewElement, listItem);
-                this.savePreviewElPosition(previewElement);
             });
 
             this.previewElementList = list;
@@ -498,24 +492,20 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             if (listItemIndex > Number(previewElIndex)) {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
                     listItemParentEl.insertBefore(previewElement, listItems[listItemIndex].nextElementSibling);
-                    this.savePreviewElPosition(previewElement);
                 });
             } else {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
                     listItemParentEl.insertBefore(previewElement, listItems[listItemIndex]);
-                    this.savePreviewElPosition(previewElement);
                 });
             }
         } else if (clientY < ListItemCenterPoint) {
             if (listItemIndex < Number(previewElIndex)) {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
                     listItemParentEl.insertBefore(previewElement, listItems[listItemIndex]);
-                    this.savePreviewElPosition(previewElement);
                 });
             } else if (listItemIndex >= 0 && listItemIndex < listItems.length) {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
                     listItemParentEl.insertBefore(previewElement, listItems[listItemIndex].nextElementSibling);
-                    this.savePreviewElPosition(previewElement);
                 });
             }
         }
@@ -702,14 +692,5 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      */
     searchListItems = (list: HTMLElement): NodeListOf<HTMLElement> | null => {
         return list.querySelectorAll(`[${this.listItemAttribute}],[${this.previewElementAttribute}]`);
-    };
-
-    /**
-     * Save current position for preview element
-     *
-     * @param previewElement
-     */
-    savePreviewElPosition = (previewElement: HTMLElement): void => {
-        previewElement.setAttribute(this.previewElementDestinationPositionAttribute, JSON.stringify(getActualPosition(previewElement)));
     };
 }
