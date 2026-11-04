@@ -1,18 +1,29 @@
+export type Axis = 'x' | 'y';
+export type Direction = 'f' | 'b';
+
+export interface ScrollTarget {
+    axis: Axis;
+    direction: Direction;
+    element: Element;
+}
+
 export interface AutoScrollerInterface {
     speed?: number;
     threshold?: number;
 
     shouldEnableAutoScroller(x: number, y: number): void;
 
-    getLastScrollableElementOnAxis(axis: string, direction: string, currentEl: HTMLElement, actualScrollAction: number): void;
+    getViewportScrollTarget(x: number, y: number, el: Element): ScrollTarget | null;
 
-    isScrollable(axis: string, element: HTMLElement): boolean;
+    getContainerScrollTarget(x: number, y: number, el: Element): ScrollTarget | null;
 
-    isScrolledToEnd(axis: string, direction: string, element: HTMLElement): boolean;
+    isRootElement(element: Element): boolean;
 
-    isFullyVisibleOnAxis(axis: string, el: HTMLElement, parentEl: HTMLElement): boolean;
+    isScrollable(axis: Axis, element: Element): boolean;
 
-    startScroller(axis: string, direction: string, scrollableElement: HTMLElement, distance: number): void;
+    isScrolledToEnd(axis: Axis, direction: Direction, element: Element): boolean;
+
+    startScroller(axis: Axis, direction: Direction, scrollableElement: Element, distance: number): void;
 
     stopScroller(): void;
 }
@@ -30,7 +41,7 @@ export default class AutoScroller implements AutoScrollerInterface {
     private readonly scrollSpeed: number;
     private startTime: DOMHighResTimeStamp | null;
     private scrollAnimationState: number | null;
-    private actualScrollAction: number | null;
+    private actualScrollTarget: ScrollTarget | null;
 
     /**
      * Constructor
@@ -43,97 +54,160 @@ export default class AutoScroller implements AutoScrollerInterface {
         this.scrollSpeed = speed;
         this.startTime = null;
         this.scrollAnimationState = null;
-        this.actualScrollAction = null;
+        this.actualScrollTarget = null;
     }
 
     /**
      * Check if auto-scrolling is required based on the current position and thresholds,
      * and trigger the auto-scroller if necessary.
      *
+     * Viewport edges have priority, then edges of the nearest scrollable container under the pointer.
+     *
      * @param x
      * @param y
      */
     shouldEnableAutoScroller(x: number, y: number): void {
-        const vw: number = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-        const vh: number = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-        const el: HTMLElement | null = document.elementFromPoint(x, y) as HTMLElement | null;
+        const el: Element | null = document.elementFromPoint(x, y);
 
         if (el) {
-            const elRect: DOMRect = el.getBoundingClientRect();
-            if (x > vw - this.scrollToPositionThreshold) {
-                // viewport X axis →
-                this.getLastScrollableElementOnAxis('x', 'f', el, 1);
-            } else if (x - elRect.x > el.clientWidth - this.scrollToPositionThreshold) {
-                // el X axis →
-                this.scrollElement('x', 'f', this.getFirstFullyVisibleElementOnAxis('x', el), 2);
-            } else if (x < this.scrollToPositionThreshold) {
-                // viewport X axis ←
-                this.getLastScrollableElementOnAxis('x', 'b', el, 3);
-            } else if (x - elRect.x < this.scrollToPositionThreshold) {
-                // element X axis ←
-                this.scrollElement('x', 'b', this.getFirstFullyVisibleElementOnAxis('x', el), 4);
-            } else if (y < this.scrollToPositionThreshold) {
-                // viewport Y axis  ↑
-                this.getLastScrollableElementOnAxis('y', 'b', el, 5);
-            } else if (y - elRect.y < this.scrollToPositionThreshold) {
-                // element Y axis  ↑
-                this.scrollElement('y', 'b', this.getFirstFullyVisibleElementOnAxis('y', el), 6);
-            } else if (y > vh - this.scrollToPositionThreshold) {
-                // viewport Y axis ↓
-                this.getLastScrollableElementOnAxis('y', 'f', el, 7);
-            } else if (y - elRect.y > elRect.height - this.scrollToPositionThreshold) {
-                // element Y axis ↓
-                this.scrollElement('y', 'f', this.getFirstFullyVisibleElementOnAxis('y', el), 8);
+            const target = this.getViewportScrollTarget(x, y, el) ?? this.getContainerScrollTarget(x, y, el);
+
+            if (target) {
+                this.scrollTo(target);
             } else {
                 this.stopScroller();
             }
         }
     }
 
-    getLastScrollableElementOnAxis(axis: 'x' | 'y', direction:'f' | 'b', currentEl: HTMLElement, actualScrollAction: number): void {
-        if (actualScrollAction !== this.actualScrollAction) {
-            this.stopScroller();
-            this.actualScrollAction = actualScrollAction;
-            let scrollableElement;
+    /**
+     * Find the outermost scrollable element when the pointer is near the viewport edge
+     *
+     * @param x
+     * @param y
+     * @param el
+     */
+    getViewportScrollTarget(x: number, y: number, el: Element): ScrollTarget | null {
+        const vw: number = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        const vh: number = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+        const threshold = this.scrollToPositionThreshold;
+        const edges: Array<[Axis, Direction, boolean]> = [
+            ['x', 'f', x > vw - threshold],
+            ['x', 'b', x < threshold],
+            ['y', 'b', y < threshold],
+            ['y', 'f', y > vh - threshold]
+        ];
+
+        for (const [axis, direction, isNearEdge] of edges) {
+            if (!isNearEdge) {
+                continue;
+            }
+
+            let scrollableElement: Element | null = null;
+            let currentEl: Element | null = el;
 
             while (currentEl) {
                 if (this.isScrollable(axis, currentEl) && !this.isScrolledToEnd(axis, direction, currentEl)) {
                     scrollableElement = currentEl;
                 }
 
-                currentEl = currentEl.parentElement as HTMLElement;
+                currentEl = currentEl.parentElement;
             }
 
             if (scrollableElement) {
-                this.startScroller(axis, direction, scrollableElement);
+                return {axis, direction, element: scrollableElement};
             }
         }
+
+        return null;
     }
 
-    scrollElement(axis: string, direction: string, el: HTMLElement, actualScrollAction: number): void {
-        if (actualScrollAction !== this.actualScrollAction) {
-            this.stopScroller();
-            this.actualScrollAction = actualScrollAction;
-            this.startScroller(axis, direction, el);
+    /**
+     * Find the nearest scrollable container whose edge is under the pointer
+     *
+     * @param x
+     * @param y
+     * @param el
+     */
+    getContainerScrollTarget(x: number, y: number, el: Element): ScrollTarget | null {
+        const threshold = this.scrollToPositionThreshold;
+        let currentEl: Element | null = el;
+
+        while (currentEl) {
+            //root element edges are the viewport edges
+            if (!this.isRootElement(currentEl)) {
+                const rect = currentEl.getBoundingClientRect();
+
+                //visible area without borders and scrollbars
+                const left = rect.left + currentEl.clientLeft;
+                const top = rect.top + currentEl.clientTop;
+                const right = left + currentEl.clientWidth;
+                const bottom = top + currentEl.clientHeight;
+
+                const edges: Array<[Axis, Direction, boolean]> = [
+                    ['x', 'f', x > right - threshold && x <= right],
+                    ['x', 'b', x < left + threshold && x >= left],
+                    ['y', 'b', y < top + threshold && y >= top],
+                    ['y', 'f', y > bottom - threshold && y <= bottom]
+                ];
+
+                for (const [axis, direction, isNearEdge] of edges) {
+                    if (isNearEdge && this.isScrollable(axis, currentEl) && !this.isScrolledToEnd(axis, direction, currentEl)) {
+                        return {axis, direction, element: currentEl};
+                    }
+                }
+            }
+
+            currentEl = currentEl.parentElement;
         }
+
+        return null;
     }
 
-    isScrollable = (axis: 'x' | 'y', element: HTMLElement): boolean => {
-        const style = getComputedStyle(element);
+    /**
+     * Start scrolling the target, restart only when the target has changed
+     *
+     * @param target
+     */
+    scrollTo(target: ScrollTarget): void {
+        const actual = this.actualScrollTarget;
 
-        const overflowX = style.overflowX;
-        const overflowY = style.overflowY;
-
-        if (axis === 'x') {
-            if (overflowX === 'hidden') return false;
-            return element.scrollWidth > element.clientWidth;
-        } else {
-            if (overflowY === 'hidden') return false;
-            return element.scrollHeight > element.clientHeight;
+        if (actual && actual.axis === target.axis && actual.direction === target.direction && actual.element === target.element) {
+            return;
         }
+
+        this.stopScroller();
+        this.actualScrollTarget = target;
+        this.startScroller(target.axis, target.direction, target.element);
+    }
+
+    /**
+     * Check if the document root (scrolled by the viewport)
+     *
+     * @param element
+     */
+    isRootElement = (element: Element): boolean => {
+        return element === document.documentElement || element === document.body || element === document.scrollingElement;
     };
 
-    isScrolledToEnd = (axis: 'x' | 'y', direction: 'f' | 'b', element: HTMLElement, tolerance = 2): boolean => {
+    isScrollable = (axis: Axis, element: Element): boolean => {
+        const hasOverflow = axis === 'x' ? element.scrollWidth > element.clientWidth : element.scrollHeight > element.clientHeight;
+
+        if (!hasOverflow) {
+            return false;
+        }
+
+        const overflow = axis === 'x' ? getComputedStyle(element).overflowX : getComputedStyle(element).overflowY;
+
+        //root is scrolled by the viewport even with overflow: visible
+        if (this.isRootElement(element)) {
+            return overflow !== 'hidden' && overflow !== 'clip';
+        }
+
+        return overflow === 'auto' || overflow === 'scroll' || overflow === 'overlay';
+    };
+
+    isScrolledToEnd = (axis: Axis, direction: Direction, element: Element, tolerance = 2): boolean => {
         if (axis === 'x') {
             if (direction === 'f') {
                 return Math.abs(element.scrollWidth - element.scrollLeft - element.clientWidth) <= tolerance;
@@ -158,7 +232,7 @@ export default class AutoScroller implements AutoScrollerInterface {
      * @param distance
      */
 
-    startScroller(axis: string, direction: string, scrollableElement: HTMLElement, distance: number = 0): void {
+    startScroller(axis: Axis, direction: Direction, scrollableElement: Element, distance: number = 0): void {
         if (this.scrollAnimationState === null) {
             this.scrollAnimationState = requestAnimationFrame((timestamp) => {
                 if (!this.startTime) {
@@ -188,28 +262,6 @@ export default class AutoScroller implements AutoScrollerInterface {
         }
     }
 
-    isFullyVisibleOnAxis(axis: string, el: HTMLElement, parentEl: HTMLElement): boolean {
-        return axis === 'x' ? el.clientWidth < parentEl.clientWidth : el.clientHeight < parentEl.clientHeight;
-    }
-
-    /**
-     * Get first fully visible element on selected axis
-     */
-    getFirstFullyVisibleElementOnAxis(axis: string, el: HTMLElement): HTMLElement {
-        let parentEl = el.parentElement;
-
-        while (parentEl) {
-            if (this.isFullyVisibleOnAxis(axis, el, parentEl)) {
-                return el;
-            }
-
-            el = parentEl;
-            parentEl = parentEl.parentElement;
-        }
-
-        return el;
-    }
-
     /**
      * stop scroller
      */
@@ -220,6 +272,6 @@ export default class AutoScroller implements AutoScrollerInterface {
 
         this.startTime = null;
         this.scrollAnimationState = null;
-        this.actualScrollAction = null;
+        this.actualScrollTarget = null;
     }
 }
