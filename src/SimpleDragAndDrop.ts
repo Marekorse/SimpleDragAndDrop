@@ -688,9 +688,15 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     /**
      * Search List items Element
      *
+     * Only items belonging to the list (by list id), items of nested lists are excluded.
+     *
      * @param list
      */
     searchListItems = (list: HTMLElement): NodeListOf<HTMLElement> | null => {
-        return list.querySelectorAll(`[${this.listItemAttribute}],[${this.previewElementAttribute}]`);
+        const listId = list.getAttribute(this.listAttribute) as string;
+
+        return list.querySelectorAll(
+            `[${this.listItemAttribute}][${this.listIdAttribute}="${listId}"],[${this.previewElementAttribute}][${this.listIdAttribute}="${listId}"]`
+        );
     };
 }
