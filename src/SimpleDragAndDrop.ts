@@ -22,7 +22,13 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     public readonly draggedElementClass: string;
     public readonly previewElementStyle: Partial<CSSStyleDeclaration> | null;
     public readonly previewElementClass: string;
-
+    public readonly dragThreshold: number;
+    private pendingDragStart: {
+        listItem: HTMLElement;
+        list: HTMLElement;
+        x: number;
+        y: number;
+    } | null;
     private draggedElement: HTMLElement | null;
     private draggedElementOriginalIndex: number | null;
     private draggedElementPosition: {
@@ -72,11 +78,13 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         this.previewElementClass = options.previewElementClass ?? '';
         this.draggedElementStyle = options.draggedElementStyle ?? null;
         this.draggedElementClass = options.draggedElementClass ?? '';
+        this.dragThreshold = options.dragThreshold ?? 5;
         this.previewElement = null;
         this.previewElementList = null;
         this.previewElementOriginalList = null;
 
         //STATE
+        this.pendingDragStart = null;
         this.draggedElement = null;
         this.draggedElementOriginalIndex = null;
         this.draggedElementPosition = {
@@ -129,10 +137,16 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         //CREATE EVENT LISTENERS
         const onDragStart = (e: PointerEvent) => this.onDragStart(e, e.clientX, e.clientY);
         const onDragEnd = () => this.onDragEnd();
-        const onDragMove = (e: PointerEvent) => this.onDragMove(e, document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY);
+        const onDragMove = (e: PointerEvent) => this.onDragMove(e, e.clientX, e.clientY);
 
         const preventDefaultWhileDragging = (e: Event) => {
             if (this.draggedElement) {
+                e.preventDefault();
+            }
+        };
+
+        const preventDefaultWhilePendingOrDragging = (e: Event) => {
+            if (this.pendingDragStart || this.draggedElement) {
                 e.preventDefault();
             }
         };
@@ -141,9 +155,9 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         document.addEventListener('pointerup', onDragEnd);
         document.addEventListener('pointercancel', onDragEnd);
         document.addEventListener('pointermove', onDragMove, {passive: false});
-        document.addEventListener('touchmove', preventDefaultWhileDragging, {passive: false});
+        document.addEventListener('touchmove', preventDefaultWhilePendingOrDragging, {passive: false});
         document.addEventListener('selectstart', preventDefaultWhileDragging);
-        document.addEventListener('dragstart', preventDefaultWhileDragging);
+        document.addEventListener('dragstart', preventDefaultWhilePendingOrDragging);
 
         //SAVE LISTENERS REFERENCE TO VARIABLE
         this.elementsWithListeners.push({
@@ -153,9 +167,9 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 pointerup: onDragEnd,
                 pointercancel: onDragEnd,
                 pointermove: onDragMove,
-                touchmove: preventDefaultWhileDragging,
+                touchmove: preventDefaultWhilePendingOrDragging,
                 selectstart: preventDefaultWhileDragging,
-                dragstart: preventDefaultWhileDragging
+                dragstart: preventDefaultWhilePendingOrDragging
             }
         });
     };
@@ -186,7 +200,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             return;
         }
 
-        if (!this.draggedElement && target instanceof HTMLElement) {
+        if (!this.draggedElement && !this.pendingDragStart && target instanceof HTMLElement) {
             const listItem: HTMLElement | null = searchParentElement(
                 target,
                 (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute)
@@ -196,20 +210,17 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
 
             if (listItem && list) {
-                event.preventDefault();
-
                 const actionBtnElement = list.hasAttribute(this.listHasActionBtnAttribute)
                     ? searchParentElement(target, (el) => el.hasAttribute(this.listItemActionBtnAttribute), listItem)
                     : null;
 
                 if (!this.elementsAnimator.isMoved(listItem) && !list.hasAttribute(this.listDragDisabledAttribute) && listItem.parentElement && (!list.hasAttribute(this.listHasActionBtnAttribute) || actionBtnElement)) {
-                    this.previewElement = this.createPreviewElement(list, listItem);
-                    this.draggedElement = this.createDraggedElement(list, listItem, clientX, clientY);
-                    listItem.parentElement.insertBefore(this.previewElement, listItem);
-                    this.savePreviewElPosition(this.previewElement);
-                    document.body.appendChild(this.draggedElement);
-                    this.enteredTarget = this.previewElement;
-                    this.emit('dragStart', listItem);
+                    this.pendingDragStart = {
+                        listItem: listItem,
+                        list: list,
+                        x: clientX,
+                        y: clientY
+                    };
                 }
             }
         }
@@ -219,11 +230,34 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * Basic Function for determining whether and where the dragged element should be placed
      *
      * @param event
-     * @param target
      * @param x
      * @param y
      */
-    onDragMove(event: PointerEvent, target: EventTarget | HTMLElement | null, x: number, y: number) {
+    onDragMove(event: PointerEvent, x: number, y: number) {
+        const pendingDragStart = this.pendingDragStart;
+
+        if (pendingDragStart) {
+            if (Math.hypot(x - pendingDragStart.x, y - pendingDragStart.y) < this.dragThreshold) {
+                return;
+            }
+
+            this.pendingDragStart = null;
+            const {listItem, list} = pendingDragStart;
+
+            if (!listItem.parentElement) {
+                return;
+            }
+
+            this.previewElement = this.createPreviewElement(list, listItem);
+            this.draggedElement = this.createDraggedElement(list, listItem, pendingDragStart.x, pendingDragStart.y);
+            listItem.parentElement.insertBefore(this.previewElement, listItem);
+            this.savePreviewElPosition(this.previewElement);
+            document.body.appendChild(this.draggedElement);
+            this.enteredTarget = this.previewElement;
+            this.emit('dragStart', listItem);
+        }
+
+        const target = document.elementFromPoint(x, y);
         const draggedElement = this.draggedElement as HTMLElement;
         const previewElement = this.previewElement as HTMLElement;
 
@@ -296,6 +330,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      */
     onDragEnd = (): void => {
+        this.pendingDragStart = null;
         this.autoScroller.stopScroller();
 
         const draggedElement = this.draggedElement as HTMLElement;

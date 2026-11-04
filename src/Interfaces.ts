@@ -9,7 +9,7 @@ export interface SimpleDragAndDropInterface {
 
   onDragStart(event: PointerEvent, clientX: number, clientY: number): void;
 
-  onDragMove(event: PointerEvent, target: EventTarget | null, clientX: number, clientY: number): void;
+  onDragMove(event: PointerEvent, clientX: number, clientY: number): void;
 
   onDragEnd(): void;
 
@@ -42,6 +42,7 @@ export interface SDDOptionsInterface {
   draggedElementClass?: string;
   previewElementStyle?: Partial<CSSStyleDeclaration>;
   previewElementClass?: string;
+  dragThreshold?: number;
 }
 
 export interface ElementsAnimatorInterface {

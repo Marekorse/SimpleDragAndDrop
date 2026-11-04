@@ -3,8 +3,8 @@ interface SimpleDragAndDropInterface {
     options: SDDOptionsInterface;
     init(): void;
     clearEventListeners(): void;
-    onDragStart(event: MouseEvent | TouchEvent, clientX: number, clientY: number): void;
-    onDragMove(event: MouseEvent | TouchEvent, target: EventTarget | null, clientX: number, clientY: number): void;
+    onDragStart(event: PointerEvent, clientX: number, clientY: number): void;
+    onDragMove(event: PointerEvent, clientX: number, clientY: number): void;
     onDragEnd(): void;
     replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalStyle: string): void;
     checksElementsUpdates(previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number): void;
@@ -24,6 +24,7 @@ interface SDDOptionsInterface {
     draggedElementClass?: string;
     previewElementStyle?: Partial<CSSStyleDeclaration>;
     previewElementClass?: string;
+    dragThreshold?: number;
 }
 interface EmitterInterface {
     on(eventName: string, listener: (data: any) => void): void;
@@ -37,6 +38,8 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
     readonly draggedElementClass: string;
     readonly previewElementStyle: Partial<CSSStyleDeclaration> | null;
     readonly previewElementClass: string;
+    readonly dragThreshold: number;
+    private pendingDragStart;
     private draggedElement;
     private draggedElementOriginalIndex;
     private draggedElementPosition;
@@ -87,16 +90,15 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
      * @param clientX
      * @param clientY
      */
-    onDragStart(event: MouseEvent | TouchEvent, clientX: number, clientY: number): void;
+    onDragStart(event: PointerEvent, clientX: number, clientY: number): void;
     /**
      * Basic Function for determining whether and where the dragged element should be placed
      *
      * @param event
-     * @param target
      * @param x
      * @param y
      */
-    onDragMove(event: MouseEvent | TouchEvent, target: EventTarget | HTMLElement | null, x: number, y: number): void;
+    onDragMove(event: PointerEvent, x: number, y: number): void;
     /**
      * Checks whether the positions of the items have been changed and fire "updated" event
      *
