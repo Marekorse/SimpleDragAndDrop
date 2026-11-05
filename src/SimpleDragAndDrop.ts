@@ -285,7 +285,10 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
                 this.enteredTarget = item;
                 const list = item.hasAttribute(this.listAttribute) ? item : this.searchListOfItem(item)!;
-                const isShared = previewElement.getAttribute(this.previewElementListSharedAttribute) === list.getAttribute(this.listSharedAttribute);
+                const sharedGroup = previewElement.getAttribute(this.previewElementListSharedAttribute);
+                const isShared = sharedGroup !== null
+                    ? sharedGroup === list.getAttribute(this.listSharedAttribute)
+                    : list === this.previewElementOriginalList;
                 const dropDisabled = list.hasAttribute(this.listDropDisabledAttribute);
 
                 if (!dropDisabled && isShared) {
@@ -600,11 +603,15 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         //set data attributes
         const listId = String(referenceElement.getAttribute(this.listIdAttribute));
-        const shared = String(list.getAttribute(this.listSharedAttribute));
+        const shared = list.getAttribute(this.listSharedAttribute);
 
         el.setAttribute(this.previewElementOriginalListAttribute, listId);
         el.setAttribute(this.listIdAttribute, listId);
-        el.setAttribute(this.previewElementListSharedAttribute, shared);
+
+        if (shared !== null) {
+            el.setAttribute(this.previewElementListSharedAttribute, shared);
+        }
+
         el.setAttribute(this.previewElementAttribute, '');
 
         this.previewElementList = list;
