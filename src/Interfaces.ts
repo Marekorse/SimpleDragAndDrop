@@ -11,7 +11,7 @@ export interface SimpleDragAndDropInterface {
 
   onDragMove(event: PointerEvent, clientX: number, clientY: number): void;
 
-  onDragEnd(): void;
+  onDragEnd(event?: PointerEvent): void;
 
   replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement,draggedElementOriginalStyle:string): void;
 

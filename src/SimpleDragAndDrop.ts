@@ -31,6 +31,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         x: number;
         y: number;
     } | null;
+    private activePointerId: number | null;
     private draggedElement: HTMLElement | null;
     private draggedElementOriginalIndex: number | null;
     private draggedElementPosition: {
@@ -86,6 +87,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         //STATE
         this.pendingDragStart = null;
+        this.activePointerId = null;
         this.draggedElement = null;
         this.draggedElementOriginalIndex = null;
         this.draggedElementPosition = {
@@ -136,7 +138,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     init = (): void => {
         //CREATE EVENT LISTENERS
         const onDragStart = (e: PointerEvent) => this.onDragStart(e, e.clientX, e.clientY);
-        const onDragEnd = () => this.onDragEnd();
+        const onDragEnd = (e: PointerEvent) => this.onDragEnd(e);
         const onDragMove = (e: PointerEvent) => this.onDragMove(e, e.clientX, e.clientY);
 
         const preventDefaultWhileDragging = (e: Event) => {
@@ -224,6 +226,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                         x: clientX,
                         y: clientY
                     };
+                    this.activePointerId = event.pointerId;
                 }
             }
         }
@@ -242,6 +245,10 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             return;
         }
 
+        if (event.pointerId !== this.activePointerId) {
+            return;
+        }
+
         const pendingDragStart = this.pendingDragStart;
 
         if (pendingDragStart) {
@@ -253,6 +260,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             const {listItem, list} = pendingDragStart;
 
             if (!listItem.parentElement) {
+                this.activePointerId = null;
                 return;
             }
 
@@ -338,9 +346,15 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     /**
      * Checks whether the positions of the items have been changed and fire "updated" event
      *
+     * @param event pointerup/pointercancel, when omitted the drag is ended regardless of the pointer
      */
-    onDragEnd = (): void => {
+    onDragEnd = (event?: PointerEvent): void => {
+        if (event && event.pointerId !== this.activePointerId) {
+            return;
+        }
+
         this.pendingDragStart = null;
+        this.activePointerId = null;
         this.autoScroller.stopScroller();
 
         const draggedElement = this.draggedElement as HTMLElement;
