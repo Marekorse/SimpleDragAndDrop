@@ -79,12 +79,84 @@ npm install @marekorse/simple-drag-and-drop
    // initialization
    const simpleDragAndDrop = new SimpleDragAndDrop(options);
 
-	
-   simpleDragAndDrop.on('itemsUpdated', (listItems) => {
-        //Handle
-   })
+   simpleDragAndDrop.on('drop', ({ from, to }) => {
+      //Handle
+   });
 </script>
 ```
+
+## 🎯 Drop
+
+While dragging, only a copy of the item moves. The original stays in its place hidden (`display: none`).
+When the copy reaches the drop position:
+
+1. the copy and the preview are removed, the original is shown again in its original place,
+2. `data-list-id` of the item is set to the target list,
+3. `applyMove(payload)` moves the item - **only when the position changed**,
+4. the `drop` event is emitted - **on every drop**, also when the position did not change.
+
+The default `applyMove` inserts the item in the DOM (`to.parent.insertBefore(item, to.before)`), so vanilla JS
+works without any extra code. In a framework (Vue, React, Angular...) pass your own `applyMove`,
+update your data there and let the framework move the element.
+
+`applyMove` must always reflect the move, otherwise the item stays in its original list with a wrong `data-list-id`.
+
+Payload of `applyMove` and the `drop` event:
+
+```ts
+{
+  item: HTMLElement,                  // the original list item
+  from: { list, listId, index },      // where the item was dragged from
+  to: {
+    list, listId, index,              // where the item was dropped, index without the dragged item
+    parent: HTMLElement,              // element the item should be inserted into
+    before: Node | null               // node the item should be inserted before, null = append
+  }
+}
+```
+
+#### Vue
+
+In `applyMove` update the data only, never move elements rendered by Vue in the DOM.
+
+```vue
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { SimpleDragAndDrop } from '@marekorse/simple-drag-and-drop';
+
+const lists = ref({
+   todo: [{ id: 1, title: 'A' }, { id: 2, title: 'B' }],
+   done: [{ id: 3, title: 'C' }]
+});
+
+let simpleDragAndDrop = null;
+
+onMounted(() => {
+   simpleDragAndDrop = new SimpleDragAndDrop({
+      applyMove({ from, to }) {
+         const [moved] = lists.value[from.listId].splice(from.index, 1);
+         lists.value[to.listId].splice(to.index, 0, moved);
+      }
+   });
+});
+
+onBeforeUnmount(() => {
+   simpleDragAndDrop?.clearEventListeners();
+});
+</script>
+
+<template>
+   <ul v-for="(items, listId) in lists" :key="listId" :data-list="listId" data-list-shared="group">
+      <li v-for="item in items" :key="item.id" data-list-item :data-list-id="listId">
+         {{ item.title }}
+      </li>
+   </ul>
+</template>
+```
+
+- `:key` must be a stable id (not an index), otherwise Vue does not move the element.
+- `:data-list-id` must be bound, Vue updates it when the item moves to another list.
+
 
 
 ## 📦 Options
@@ -98,6 +170,8 @@ npm install @marekorse/simple-drag-and-drop
 | `draggedElementClass`    | `string`      | CSS class(es) applied to the dragged element.                               |
 | `previewElementStyle`    | `object`      | Inline CSS styles applied to the preview placeholder.                       |
 | `previewElementClass`    | `string`      | CSS class(es) applied to the preview placeholder element.                   |
+| `dragThreshold`          | `number`      | Distance in pixels the pointer must move before dragging starts. Default: `5`. |
+| `applyMove`              | `function`    | Moves the dropped item, called only when the position changed. Default: inserts the item in the DOM. See [Drop](#-drop). |
 
 
 
@@ -134,7 +208,9 @@ npm install @marekorse/simple-drag-and-drop
 | `dragOver`      | `ListItem` or `List`         | Fired continuously while dragging. Useful for tracking position or target.  |
 | `dragEnter`     | `ListItem` or `List`         | Triggered when a dragged item enters another `List` or `ListItem.           |
 | `dragEnd`       | —                            | Called when the drag operation completes (drop).                            |
-| `itemsUpdated`  | `ListItem[]`                 | Triggered after list items are reordered or moved between lists.            |
+| `drop`          | `DropPayload`                | Emitted on every drop after `applyMove`, also when the position did not change. See [Drop](#-drop). |
+
+> `itemsUpdated` event was removed. Use `drop` instead, see [Drop](#-drop).
 
 
  

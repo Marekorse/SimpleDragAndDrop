@@ -6,8 +6,11 @@ interface SimpleDragAndDropInterface {
     onDragStart(event: PointerEvent, clientX: number, clientY: number): void;
     onDragMove(event: PointerEvent, clientX: number, clientY: number): void;
     onDragEnd(): void;
-    replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalStyle: string): void;
-    checksElementsUpdates(previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number): void;
+    finishDrop(previewElement: HTMLElement, draggedElement: HTMLElement, sourceElement: HTMLElement, previewElList: HTMLElement, previewElOriginalList: HTMLElement, draggedElementOriginalIndex: number): DropPayload;
+    createDraggedCopy(target: HTMLElement): HTMLElement;
+    hideSourceElement(sourceElement: HTMLElement): void;
+    showSourceElement(sourceElement: HTMLElement): void;
+    defaultApplyMove(payload: DropPayload): void;
     placeElementToList(draggedElement: HTMLElement, y: number, list: HTMLElement): void;
     replaceElement(clientY: number, target: HTMLElement, draggedElement: HTMLElement): void;
     createDraggedElement(list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement;
@@ -25,6 +28,25 @@ interface SDDOptionsInterface {
     previewElementStyle?: Partial<CSSStyleDeclaration>;
     previewElementClass?: string;
     dragThreshold?: number;
+    /**
+     * Moves the dropped item to its new place. Called only when the position changed, before the 'drop' event.
+     * Default: inserts the item in the DOM (to.parent.insertBefore(item, to.before)).
+     * In a framework update your data instead and let the framework move the element.
+     */
+    applyMove?: (payload: DropPayload) => void;
+}
+interface DropPosition {
+    list: HTMLElement;
+    listId: string;
+    index: number;
+}
+interface DropPayload {
+    item: HTMLElement;
+    from: DropPosition;
+    to: DropPosition & {
+        parent: HTMLElement;
+        before: Node | null;
+    };
 }
 interface EmitterInterface {
     on(eventName: string, listener: (data: any) => void): void;
@@ -33,6 +55,7 @@ interface EmitterInterface {
 
 declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInterface {
     readonly options: SDDOptionsInterface;
+    readonly applyMove: (payload: DropPayload) => void;
     readonly animationDuration: number;
     readonly draggedElementStyle: Partial<CSSStyleDeclaration> | null;
     readonly draggedElementClass: string;
@@ -43,12 +66,14 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
     private draggedElement;
     private draggedElementOriginalIndex;
     private draggedElementPosition;
-    private originalStyle;
+    private sourceElement;
+    private readonly sourceElementOriginalDisplay;
     private previewElement;
     private previewElementList;
     private previewElementOriginalList;
     private enteredTarget;
     private readonly draggedElementAttribute;
+    private readonly sourceElementAttribute;
     private readonly previewElementAttribute;
     private readonly previewElementOriginalListAttribute;
     private readonly previewElementListSharedAttribute;
@@ -71,7 +96,7 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
      *
      * @param options
      */
-    constructor(options: SDDOptionsInterface);
+    constructor(options?: SDDOptionsInterface);
     /**
      * Initialization
      *
@@ -104,23 +129,38 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
      */
     onDragEnd: () => void;
     /**
-     * Replace preview element with dragged element
+     * Hide the original list item while its copy is dragged, its inline display is saved
      *
-     * @param previewElement
-     * @param draggedElement
-     * @param draggedElementOriginalStyle
+     * @param sourceElement
      */
-    replacePreviewElementWithDraggedElement: (previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalStyle: string) => void;
+    hideSourceElement: (sourceElement: HTMLElement) => void;
     /**
-     * Checks if elements positions have changed, and dispatches an event if a modification is detected.
+     * Show the original list item again with its original inline display
      *
-     * @param previewElList
-     * @param previewElOriginalList
+     * @param sourceElement
+     */
+    showSourceElement: (sourceElement: HTMLElement) => void;
+    /**
+     * End of drop - called when the dragged copy reached the preview position
+     *
+     * Calculates the drop position, restores the DOM to the state before dragging
+     * (removes the copy and the preview, shows the original), moves the original via applyMove
+     * when the position changed and emits the 'drop' event.
+     *
      * @param previewElement
-     * @param draggedElement
+     * @param draggedElement dragged copy
+     * @param sourceElement hidden original
+     * @param previewElList list where the item was dropped
+     * @param previewElOriginalList list where the item was dragged from
      * @param draggedElementOriginalIndex
      */
-    checksElementsUpdates: (previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number) => void;
+    finishDrop: (previewElement: HTMLElement, draggedElement: HTMLElement, sourceElement: HTMLElement, previewElList: HTMLElement, previewElOriginalList: HTMLElement, draggedElementOriginalIndex: number) => DropPayload;
+    /**
+     * Default applyMove - inserts the dropped item in the DOM (vanilla JS)
+     *
+     * @param payload
+     */
+    defaultApplyMove: (payload: DropPayload) => void;
     /**
      * calculation of where the element should be placed in the list
      *
@@ -140,12 +180,20 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
     /**
      * Create dragged element
      *
+     * The dragged element is a copy of the target, all measurements are taken on the target.
+     *
      * @param list
      * @param target
      * @param x
      * @param y
      */
     createDraggedElement: (list: HTMLElement, target: HTMLElement, x: number, y: number) => HTMLElement;
+    /**
+     * Create a visual copy of the list item for dragging
+     *
+     * @param target
+     */
+    createDraggedCopy: (target: HTMLElement) => HTMLElement;
     /**
      * Create placeholder element
      *
@@ -182,10 +230,11 @@ declare class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterIn
      * Search List items Element
      *
      * Only items belonging to the list (by list id), items of nested lists are excluded.
+     * The hidden original of the dragged item is excluded as well.
      *
      * @param list
      */
     searchListItems: (list: HTMLElement) => NodeListOf<HTMLElement> | null;
 }
 
-export { SimpleDragAndDrop };
+export { type DropPayload, type DropPosition, type SDDOptionsInterface, SimpleDragAndDrop };

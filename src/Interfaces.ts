@@ -13,9 +13,16 @@ export interface SimpleDragAndDropInterface {
 
   onDragEnd(event?: PointerEvent): void;
 
-  replacePreviewElementWithDraggedElement(previewElement: HTMLElement, draggedElement: HTMLElement,draggedElementOriginalStyle:string): void;
+  finishDrop(previewElement: HTMLElement, draggedElement: HTMLElement, sourceElement: HTMLElement, previewElList: HTMLElement, previewElOriginalList: HTMLElement, draggedElementOriginalIndex: number): DropPayload;
 
-  checksElementsUpdates(previewElList: HTMLElement, previewElOriginalList: HTMLElement, previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalIndex: number): void;
+
+  createDraggedCopy(target: HTMLElement): HTMLElement;
+
+  hideSourceElement(sourceElement: HTMLElement): void;
+
+  showSourceElement(sourceElement: HTMLElement): void;
+
+  defaultApplyMove(payload: DropPayload): void;
 
   placeElementToList(draggedElement: HTMLElement, y: number, list: HTMLElement): void;
 
@@ -43,6 +50,27 @@ export interface SDDOptionsInterface {
   previewElementStyle?: Partial<CSSStyleDeclaration>;
   previewElementClass?: string;
   dragThreshold?: number;
+  /**
+   * Moves the dropped item to its new place. Called only when the position changed, before the 'drop' event.
+   * Default: inserts the item in the DOM (to.parent.insertBefore(item, to.before)).
+   * In a framework update your data instead and let the framework move the element.
+   */
+  applyMove?: (payload: DropPayload) => void;
+}
+
+export interface DropPosition {
+  list: HTMLElement;
+  listId: string;
+  index: number;
+}
+
+export interface DropPayload {
+  item: HTMLElement;
+  from: DropPosition;
+  to: DropPosition & {
+    parent: HTMLElement;
+    before: Node | null;
+  };
 }
 
 export interface ElementsAnimatorInterface {

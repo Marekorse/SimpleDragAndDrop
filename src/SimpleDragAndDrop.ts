@@ -12,13 +12,21 @@ import {
     getActualPosition,
     getElementsFromIndexes,
     getLayoutPosition,
-    removeMultipleClasses,
     searchParentElement
 } from './Helpers';
-import {EmitterInterface, SDDOptionsInterface, SimpleDragAndDropInterface} from './Interfaces';
+
+import {
+    DropPayload,
+    EmitterInterface,
+    SDDOptionsInterface,
+    SimpleDragAndDropInterface
+} from './Interfaces';
+
+export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces';
 
 export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInterface {
     public readonly options!: SDDOptionsInterface;
+    public readonly applyMove: (payload: DropPayload) => void;
     public readonly animationDuration: number;
     public readonly draggedElementStyle: Partial<CSSStyleDeclaration> | null;
     public readonly draggedElementClass: string;
@@ -42,13 +50,15 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         directionY: number;
         directionX: number;
     };
-    private originalStyle: string;
+    private sourceElement: HTMLElement | null;
+    private readonly sourceElementOriginalDisplay = new WeakMap<HTMLElement, { value: string; priority: string }>();
     private previewElement: HTMLElement | null;
     private previewElementList: HTMLElement | null;
     private previewElementOriginalList: HTMLElement | null;
     private enteredTarget: HTMLElement | null;
 
     private readonly draggedElementAttribute: string;
+    private readonly sourceElementAttribute: string;
     private readonly previewElementAttribute: string;
     private readonly previewElementOriginalListAttribute: string;
     private readonly previewElementListSharedAttribute: string;
@@ -73,8 +83,9 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param options
      */
-    constructor(options: SDDOptionsInterface) {
+    constructor(options: SDDOptionsInterface = {}) {
         //PARAMS
+        this.applyMove = options.applyMove ?? this.defaultApplyMove;
         this.animationDuration = options.animationDuration ?? 150;
         this.previewElementStyle = options.previewElementStyle ?? null;
         this.previewElementClass = options.previewElementClass ?? '';
@@ -99,11 +110,12 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             directionX: 0
         };
 
-        this.originalStyle = '';
+        this.sourceElement = null;
         this.enteredTarget = null;
 
         //DATA ATTRIBUTES
         this.draggedElementAttribute = 'data-dragging';
+        this.sourceElementAttribute = 'data-drag-source';
         this.previewElementAttribute = 'data-preview';
         this.previewElementOriginalListAttribute = 'data-prev-orig-list';
         this.previewElementListSharedAttribute = 'data-prev-list-shared';
@@ -267,6 +279,10 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             this.previewElement = this.createPreviewElement(list, listItem);
             this.draggedElement = this.createDraggedElement(list, listItem, pendingDragStart.x, pendingDragStart.y);
             listItem.parentElement.insertBefore(this.previewElement, listItem);
+
+            this.sourceElement = listItem;
+            this.hideSourceElement(listItem);
+
             document.body.appendChild(this.draggedElement);
             this.enteredTarget = this.previewElement;
             this.emit('dragStart', listItem);
@@ -358,13 +374,13 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         this.autoScroller.stopScroller();
 
         const draggedElement = this.draggedElement as HTMLElement;
+        const sourceElement = this.sourceElement as HTMLElement;
         const previewElement = this.previewElement as HTMLElement;
         const previewElList = this.previewElementList as HTMLElement;
         const previewElOriginalList = this.previewElementOriginalList as HTMLElement;
         const draggedElementOriginalIndex = this.draggedElementOriginalIndex as number;
-        const draggedElementOriginalStyle = this.originalStyle as string;
 
-        if (draggedElement && previewElement) {
+        if (draggedElement && sourceElement && previewElement) {
             const computedStyle = window.getComputedStyle(previewElement);
 
             if (this.animationDuration !== 0) {
@@ -373,12 +389,10 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 const marginTop = parseFloat(computedStyle.marginTop);
 
                 this.elementsAnimator.animate(draggedElement, position.x - marginLeft, position.y - marginTop, () => {
-                    this.replacePreviewElementWithDraggedElement(previewElement, draggedElement, draggedElementOriginalStyle);
-                    this.checksElementsUpdates(previewElList, previewElOriginalList, previewElement, draggedElement, draggedElementOriginalIndex);
+                    this.finishDrop(previewElement, draggedElement, sourceElement, previewElList, previewElOriginalList, draggedElementOriginalIndex);
                 });
             } else {
-                this.replacePreviewElementWithDraggedElement(previewElement, draggedElement, draggedElementOriginalStyle);
-                this.checksElementsUpdates(previewElList, previewElOriginalList, previewElement, draggedElement, draggedElementOriginalIndex);
+                this.finishDrop(previewElement, draggedElement, sourceElement, previewElList, previewElOriginalList, draggedElementOriginalIndex);
             }
 
             this.resetDraggingState();
@@ -387,55 +401,105 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     };
 
     /**
-     * Replace preview element with dragged element
+     * Hide the original list item while its copy is dragged, its inline display is saved
      *
-     * @param previewElement
-     * @param draggedElement
-     * @param draggedElementOriginalStyle
+     * @param sourceElement
      */
-    replacePreviewElementWithDraggedElement = (previewElement: HTMLElement, draggedElement: HTMLElement, draggedElementOriginalStyle: string): void => {
-        previewElement.replaceWith(draggedElement);
-        draggedElement.setAttribute(this.listIdAttribute, String(previewElement.getAttribute(this.listIdAttribute)));
+    hideSourceElement = (sourceElement: HTMLElement): void => {
+        this.sourceElementOriginalDisplay.set(sourceElement, {
+            value: sourceElement.style.getPropertyValue('display'),
+            priority: sourceElement.style.getPropertyPriority('display')
+        });
 
-        if (this.draggedElementClass) {
-            removeMultipleClasses(draggedElement, this.draggedElementClass);
-        }
-
-        draggedElement.style.cssText = draggedElementOriginalStyle;
+        sourceElement.setAttribute(this.sourceElementAttribute, '');
+        sourceElement.style.setProperty('display', 'none', 'important');
     };
 
     /**
-     * Checks if elements positions have changed, and dispatches an event if a modification is detected.
+     * Show the original list item again with its original inline display
      *
-     * @param previewElList
-     * @param previewElOriginalList
+     * @param sourceElement
+     */
+    showSourceElement = (sourceElement: HTMLElement): void => {
+        const originalDisplay = this.sourceElementOriginalDisplay.get(sourceElement);
+
+        sourceElement.removeAttribute(this.sourceElementAttribute);
+
+        //empty value removes the property, so an element without inline display stays without it
+        sourceElement.style.setProperty('display', originalDisplay?.value ?? '', originalDisplay?.priority ?? '');
+        this.sourceElementOriginalDisplay.delete(sourceElement);
+    };
+
+    /**
+     * End of drop - called when the dragged copy reached the preview position
+     *
+     * Calculates the drop position, restores the DOM to the state before dragging
+     * (removes the copy and the preview, shows the original), moves the original via applyMove
+     * when the position changed and emits the 'drop' event.
+     *
      * @param previewElement
-     * @param draggedElement
+     * @param draggedElement dragged copy
+     * @param sourceElement hidden original
+     * @param previewElList list where the item was dropped
+     * @param previewElOriginalList list where the item was dragged from
      * @param draggedElementOriginalIndex
      */
-    checksElementsUpdates = (
-        previewElList: HTMLElement,
-        previewElOriginalList: HTMLElement,
+    finishDrop = (
         previewElement: HTMLElement,
         draggedElement: HTMLElement,
+        sourceElement: HTMLElement,
+        previewElList: HTMLElement,
+        previewElOriginalList: HTMLElement,
         draggedElementOriginalIndex: number
-    ): void => {
-        const listItems = Array.from(this.searchListItems(previewElList) as NodeList);
-        const draggedElIndex = listItems.indexOf(draggedElement);
+    ): DropPayload => {
+        //the hidden original is not counted, so this is the index of the item after the move
+        const toIndex = Array.from(this.searchListItems(previewElList) as NodeList).indexOf(previewElement);
+        const parent = previewElement.parentElement as HTMLElement;
+        let before = previewElement.nextSibling;
 
-        if (previewElList.getAttribute(this.listAttribute) !== previewElement.getAttribute(this.previewElementOriginalListAttribute)) {
-            const updatedList: Array<HTMLElement[]> = [];
-            const previewElOriginalListItems = Array.from(
-                this.searchListItems(previewElOriginalList) as NodeList
-            ) as HTMLElement[];
-
-            updatedList.push(previewElOriginalListItems);
-            updatedList.push(listItems as HTMLElement[]);
-
-            this.emit('itemsUpdated', updatedList);
-        } else if (draggedElIndex !== draggedElementOriginalIndex) {
-            this.emit('itemsUpdated', listItems);
+        if (before === sourceElement) {
+            before = sourceElement.nextSibling;
         }
+
+        const payload: DropPayload = {
+            item: sourceElement,
+            from: {
+                list: previewElOriginalList,
+                listId: String(previewElOriginalList.getAttribute(this.listAttribute)),
+                index: draggedElementOriginalIndex
+            },
+            to: {
+                list: previewElList,
+                listId: String(previewElList.getAttribute(this.listAttribute)),
+                index: toIndex,
+                parent: parent,
+                before: before
+            }
+        };
+
+        sourceElement.setAttribute(this.listIdAttribute, payload.to.listId);
+
+        draggedElement.remove();
+        previewElement.remove();
+        this.showSourceElement(sourceElement);
+
+        //after restoring the DOM the item is in its original place, nothing to move when the position did not change
+        if (payload.from.listId !== payload.to.listId || payload.from.index !== payload.to.index) {
+            this.applyMove(payload);
+        }
+
+        this.emit('drop', payload);
+
+        return payload;
+    };
+
+    /**
+     * Default applyMove - inserts the dropped item in the DOM (vanilla JS)
+     *
+     * @param payload
+     */
+    defaultApplyMove = (payload: DropPayload): void => {
+        payload.to.parent.insertBefore(payload.item, payload.to.before);
     };
 
     /**
@@ -542,6 +606,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     /**
      * Create dragged element
      *
+     * The dragged element is a copy of the target, all measurements are taken on the target.
+     *
      * @param list
      * @param target
      * @param x
@@ -550,14 +616,14 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     createDraggedElement = (list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement => {
         window.getSelection()?.removeAllRanges();
 
-        const draggedElement = target;
-        const computedStyle = window.getComputedStyle(draggedElement as HTMLElement);
+        const draggedElement = this.createDraggedCopy(target);
+        const computedStyle = window.getComputedStyle(target);
         const marginLeft = parseFloat(computedStyle.marginLeft);
         const marginTop = parseFloat(computedStyle.marginTop);
         const listStyleType = computedStyle.getPropertyValue('list-style-type');
 
         //calculate offset
-        const targetRect = draggedElement.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
         Object.assign(this.draggedElementPosition, {
             x: x,
             y: y,
@@ -572,11 +638,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         draggedElement.setAttribute(this.draggedElementAttribute, '');
         draggedElement.setAttribute(this.ignoreElementAttribute, '');
 
-        //save original attributes
-        this.originalStyle = draggedElement.style.cssText;
-
         //set style attributes
-        const rect: DOMRect = draggedElement.getBoundingClientRect();
+        const rect: DOMRect = targetRect;
         draggedElement.style.setProperty('box-sizing', 'border-box', 'important');
         draggedElement.style.setProperty('width', `${rect.width}px`, 'important');
         draggedElement.style.setProperty('height', `${rect.height}px`, 'important');
@@ -605,6 +668,31 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         draggedElement.style.transform = `translate(${x - this.draggedElementPosition.offsetX}px, ${y - this.draggedElementPosition.offsetY}px)`;
 
         return draggedElement;
+    };
+
+    /**
+     * Create a visual copy of the list item for dragging
+     *
+     * @param target
+     */
+    createDraggedCopy = (target: HTMLElement): HTMLElement => {
+        const copy = target.cloneNode(true) as HTMLElement;
+
+        //duplicate ids would break labels, aria and css selectors
+        copy.removeAttribute('id');
+        copy.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+
+        //the copy must never be found as a list item
+        copy.removeAttribute(this.listItemAttribute);
+
+        //cloneNode does not copy current values of form fields
+        const targetFields = target.querySelectorAll<HTMLInputElement>('input, textarea, select');
+        copy.querySelectorAll<HTMLInputElement>('input, textarea, select').forEach((field, i) => {
+            field.value = targetFields[i].value;
+            field.checked = targetFields[i].checked;
+        });
+
+        return copy;
     };
 
     /**
@@ -675,10 +763,10 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         this.draggedElement?.removeAttribute(this.draggedElementAttribute);
         this.draggedElement?.removeAttribute(this.ignoreElementAttribute);
         this.draggedElement = null;
+        this.sourceElement = null;
         this.draggedElementOriginalIndex = null;
 
         this.enteredTarget = null;
-        this.originalStyle = '';
 
         this.previewElement = null;
         this.previewElementList = null;
@@ -731,6 +819,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * Search List items Element
      *
      * Only items belonging to the list (by list id), items of nested lists are excluded.
+     * The hidden original of the dragged item is excluded as well.
      *
      * @param list
      */
@@ -738,7 +827,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const listId = list.getAttribute(this.listAttribute) as string;
 
         return list.querySelectorAll(
-            `[${this.listItemAttribute}][${this.listIdAttribute}="${listId}"],[${this.previewElementAttribute}][${this.listIdAttribute}="${listId}"]`
+            `[${this.listItemAttribute}][${this.listIdAttribute}="${listId}"]:not([${this.sourceElementAttribute}]),` +
+            `[${this.previewElementAttribute}][${this.listIdAttribute}="${listId}"]`
         );
     };
 }
