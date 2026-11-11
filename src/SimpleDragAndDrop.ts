@@ -26,6 +26,7 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
 
 export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInterface {
     public readonly options!: SDDOptionsInterface;
+    public readonly root: HTMLElement;
     public readonly applyMove: (payload: DropPayload) => void;
     public readonly animationDuration: number;
     public readonly draggedElementStyle: Partial<CSSStyleDeclaration> | null;
@@ -33,11 +34,15 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     public readonly previewElementStyle: Partial<CSSStyleDeclaration> | null;
     public readonly previewElementClass: string;
     public readonly dragThreshold: number;
+    public readonly touchDelay: number;
+    public readonly mouseDelay: number;
     private pendingDragStart: {
         listItem: HTMLElement;
         list: HTMLElement;
         x: number;
         y: number;
+        /** running touch delay, null = the item can be dragged */
+        delayTimer: number | null;
     } | null;
     private activePointerId: number | null;
     private draggedElement: HTMLElement | null;
@@ -73,7 +78,24 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     private readonly autoScroller: AutoScroller;
     private readonly ignoreElementAttribute: string;
     private readonly elementsAnimator: ElementsAnimator;
-    private elementsWithListeners: any[];
+
+    //EVENT LISTENERS - stored, so the same references can be removed
+    private readonly handlePointerDown = (e: PointerEvent): void => this.onDragStart(e, e.clientX, e.clientY);
+    private readonly handlePointerMove = (e: PointerEvent): void => this.onDragMove(e, e.clientX, e.clientY);
+    private readonly handlePointerEnd = (e: PointerEvent): void => this.onDragEnd(e);
+    private readonly preventDefault = (e: Event): void => e.preventDefault();
+    private readonly preventDefaultUnlessTouchDelay = (e: Event): void => {
+        //during the touch delay the page can scroll, scrolling cancels the pending drag (pointercancel)
+        if (this.draggedElement || this.pendingDragStart?.delayTimer === null) {
+            e.preventDefault();
+        }
+    };
+    private readonly preventDefaultWhileDragging = (e: Event): void => {
+        //text selection inside a list item is allowed until the drag really starts
+        if (this.draggedElement) {
+            e.preventDefault();
+        }
+    };
 
     on!: (event: string, listener: (...args: any[]) => void) => void;
     emit!: (event: string, ...args: any[]) => void;
@@ -83,7 +105,15 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param options
      */
-    constructor(options: SDDOptionsInterface = {}) {
+    constructor(options: SDDOptionsInterface) {
+        const root = document.getElementById(options.root);
+
+        if (!root) {
+            throw new Error(`[SimpleDragAndDrop] root element with id "${options.root}" was not found.`);
+        }
+
+        this.root = root;
+
         //PARAMS
         this.applyMove = options.applyMove ?? this.defaultApplyMove;
         this.animationDuration = options.animationDuration ?? 150;
@@ -92,6 +122,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         this.draggedElementStyle = options.draggedElementStyle ?? null;
         this.draggedElementClass = options.draggedElementClass ?? '';
         this.dragThreshold = options.dragThreshold ?? 5;
+        this.touchDelay = options.touchDelay ?? 200;
+        this.mouseDelay = options.mouseDelay ?? 0;
         this.previewElement = null;
         this.previewElementList = null;
         this.previewElementOriginalList = null;
@@ -137,66 +169,62 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         //EVENTS
         Object.assign(this, createEmitter());
-        this.elementsWithListeners = [];
 
         this.init();
     }
 
-    /**
-     * Initialization
-     *
-     * Setup all attributes for HTML elements and event listeners.
-     */
     init = (): void => {
-        //CREATE EVENT LISTENERS
-        const onDragStart = (e: PointerEvent) => this.onDragStart(e, e.clientX, e.clientY);
-        const onDragEnd = (e: PointerEvent) => this.onDragEnd(e);
-        const onDragMove = (e: PointerEvent) => this.onDragMove(e, e.clientX, e.clientY);
+        this.root.addEventListener('pointerdown', this.handlePointerDown);
+    };
 
-        const preventDefaultWhileDragging = (e: Event) => {
-            if (this.draggedElement) {
-                e.preventDefault();
-            }
-        };
+    /**
+     * Add document listeners for the time of one drag (the pointer can leave root while dragging)
+     *
+     * touchmove is added on pointerdown, which comes before touchstart, so the browser knows it can block scrolling.
+     */
+    addDocumentListeners = (): void => {
+        document.addEventListener('pointermove', this.handlePointerMove, {passive: false});
+        document.addEventListener('pointerup', this.handlePointerEnd);
+        document.addEventListener('pointercancel', this.handlePointerEnd);
+        document.addEventListener('touchmove', this.preventDefaultUnlessTouchDelay, {passive: false});
+        document.addEventListener('dragstart', this.preventDefault);
+        document.addEventListener('selectstart', this.preventDefaultWhileDragging);
+        //long press on touch devices opens the context menu
+        document.addEventListener('contextmenu', this.preventDefault);
+    };
 
-        const preventDefaultWhilePendingOrDragging = (e: Event) => {
-            if (this.pendingDragStart || this.draggedElement) {
-                e.preventDefault();
-            }
-        };
+    /**
+     * Remove document listeners added for one drag
+     */
+    removeDocumentListeners = (): void => {
+        document.removeEventListener('pointermove', this.handlePointerMove);
+        document.removeEventListener('pointerup', this.handlePointerEnd);
+        document.removeEventListener('pointercancel', this.handlePointerEnd);
+        document.removeEventListener('touchmove', this.preventDefaultUnlessTouchDelay);
+        document.removeEventListener('dragstart', this.preventDefault);
+        document.removeEventListener('selectstart', this.preventDefaultWhileDragging);
+        document.removeEventListener('contextmenu', this.preventDefault);
+    };
 
-        document.addEventListener('pointerdown', onDragStart);
-        document.addEventListener('pointerup', onDragEnd);
-        document.addEventListener('pointercancel', onDragEnd);
-        document.addEventListener('pointermove', onDragMove, {passive: false});
-        document.addEventListener('touchmove', preventDefaultWhilePendingOrDragging, {passive: false});
-        document.addEventListener('selectstart', preventDefaultWhileDragging);
-        document.addEventListener('dragstart', preventDefaultWhilePendingOrDragging);
+    /**
+     * Cancel a drag that has not started yet (waiting for threshold or touch delay)
+     */
+    cancelPendingDrag = (): void => {
+        if (this.pendingDragStart?.delayTimer) {
+            clearTimeout(this.pendingDragStart.delayTimer);
+        }
 
-        //SAVE LISTENERS REFERENCE TO VARIABLE
-        this.elementsWithListeners.push({
-            el: document,
-            events: {
-                pointerdown: onDragStart,
-                pointerup: onDragEnd,
-                pointercancel: onDragEnd,
-                pointermove: onDragMove,
-                touchmove: preventDefaultWhilePendingOrDragging,
-                selectstart: preventDefaultWhileDragging,
-                dragstart: preventDefaultWhilePendingOrDragging
-            }
-        });
+        this.pendingDragStart = null;
+        this.activePointerId = null;
+        this.removeDocumentListeners();
     };
 
     /**
      * Remove all event listeners(for SPA).
      */
     clearEventListeners = (): void => {
-        this.elementsWithListeners.forEach((listener) => {
-            for (const [key, value] of Object.entries(listener.events)) {
-                listener.el.removeEventListener(key, value);
-            }
-        });
+        this.root.removeEventListener('pointerdown', this.handlePointerDown);
+        this.cancelPendingDrag();
     };
 
     /**
@@ -232,13 +260,26 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                     : null;
 
                 if (!this.elementsAnimator.isMoved(listItem) && !list.hasAttribute(this.listDragDisabledAttribute) && listItem.parentElement && (!list.hasAttribute(this.listHasActionBtnAttribute) || actionBtnElement)) {
-                    this.pendingDragStart = {
+                    const pendingDragStart = {
                         listItem: listItem,
                         list: list,
                         x: clientX,
-                        y: clientY
+                        y: clientY,
+                        delayTimer: null as number | null
                     };
+
+                    //touch has its own delay, mouse and pen share mouseDelay
+                    const delay = event.pointerType === 'touch' ? this.touchDelay : this.mouseDelay;
+
+                    if (delay > 0) {
+                        pendingDragStart.delayTimer = window.setTimeout(() => {
+                            pendingDragStart.delayTimer = null;
+                        }, delay);
+                    }
+
+                    this.pendingDragStart = pendingDragStart;
                     this.activePointerId = event.pointerId;
+                    this.addDocumentListeners();
                 }
             }
         }
@@ -253,28 +294,36 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      */
     onDragMove(event: PointerEvent, x: number, y: number) {
 
-        if (!this.pendingDragStart && !this.draggedElement) {
-            return;
-        }
-
-        if (event.pointerId !== this.activePointerId) {
+        if (!this.pendingDragStart && !this.draggedElement || event.pointerId !== this.activePointerId) {
             return;
         }
 
         const pendingDragStart = this.pendingDragStart;
 
         if (pendingDragStart) {
-            if (Math.hypot(x - pendingDragStart.x, y - pendingDragStart.y) < this.dragThreshold) {
+            const distance = Math.hypot(x - pendingDragStart.x, y - pendingDragStart.y);
+
+            //delay is running - moving the pointer cancels the drag (on touch the page scrolls instead)
+            if (pendingDragStart.delayTimer !== null) {
+                if (distance >= this.dragThreshold) {
+                    this.cancelPendingDrag();
+                }
+
+                return;
+            }
+
+            if (distance < this.dragThreshold) {
+                return;
+            }
+
+            const {listItem, list} = pendingDragStart;
+
+            if (!listItem.parentElement) {
+                this.cancelPendingDrag();
                 return;
             }
 
             this.pendingDragStart = null;
-            const {listItem, list} = pendingDragStart;
-
-            if (!listItem.parentElement) {
-                this.activePointerId = null;
-                return;
-            }
 
             this.previewElement = this.createPreviewElement(list, listItem);
             this.draggedElement = this.createDraggedElement(list, listItem, pendingDragStart.x, pendingDragStart.y);
@@ -296,11 +345,14 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             event.preventDefault();
             this.updateDraggedElPosition(draggedElement, x, y);
 
-            const item = searchParentElement(
+            const foundItem = searchParentElement(
                 target,
                 (el) =>
                     el.hasAttribute(this.listItemAttribute) || el.hasAttribute(this.listAttribute) || el.hasAttribute(this.previewElementAttribute)
             );
+
+            //lists of other instances are ignored
+            const item = foundItem && this.root.contains(foundItem) ? foundItem : null;
 
 
             if (item && item !== previewElement && !this.elementsAnimator.isMoved(item, previewElement)) {
@@ -360,7 +412,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     }
 
     /**
-     * Checks whether the positions of the items have been changed and fire "updated" event
+     * End of dragging - the dragged copy flies to the preview position, then finishDrop is called
      *
      * @param event pointerup/pointercancel, when omitted the drag is ended regardless of the pointer
      */
@@ -369,8 +421,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             return;
         }
 
-        this.pendingDragStart = null;
-        this.activePointerId = null;
+        this.cancelPendingDrag();
         this.autoScroller.stopScroller();
 
         const draggedElement = this.draggedElement as HTMLElement;
@@ -383,6 +434,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         if (draggedElement && sourceElement && previewElement) {
             const computedStyle = window.getComputedStyle(previewElement);
 
+            //the dragging state is reset in finishDrop, so a new drag cannot start while the copy flies to the drop position
             if (this.animationDuration !== 0) {
                 const position = getLayoutPosition(previewElement);
                 const marginLeft = parseFloat(computedStyle.marginLeft);
@@ -394,9 +446,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             } else {
                 this.finishDrop(previewElement, draggedElement, sourceElement, previewElList, previewElOriginalList, draggedElementOriginalIndex);
             }
-
-            this.resetDraggingState();
-            this.emit('dragEnd');
         }
     };
 
@@ -482,6 +531,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         draggedElement.remove();
         previewElement.remove();
         this.showSourceElement(sourceElement);
+        this.resetDraggingState();
 
         //after restoring the DOM the item is in its original place, nothing to move when the position did not change
         if (payload.from.listId !== payload.to.listId || payload.from.index !== payload.to.index) {
@@ -685,6 +735,9 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         //the copy must never be found as a list item
         copy.removeAttribute(this.listItemAttribute);
 
+        //a checked radio in the copy would uncheck the original radio of the same group when the copy is added to the document
+        copy.querySelectorAll('[name]').forEach((el) => el.removeAttribute('name'));
+
         //cloneNode does not copy current values of form fields
         const targetFields = target.querySelectorAll<HTMLInputElement>('input, textarea, select');
         copy.querySelectorAll<HTMLInputElement>('input, textarea, select').forEach((field, i) => {
@@ -794,25 +847,31 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     };
 
     /**
-     * Search List Element
+     * Search List Element inside root
      *
      * @param listId
      */
     searchList = (listId: string): HTMLElement | null => {
-        return document.querySelector(`[${this.listAttribute}="${listId}"]`);
+        const selector = `[${this.listAttribute}="${CSS.escape(listId)}"]`;
+
+        if (this.root.matches(selector)) {
+            return this.root;
+        }
+
+        return this.root.querySelector<HTMLElement>(selector);
     };
 
     /**
      * Search List Element of list item
      *
-     * Searches only the item ancestors, falls back to the whole document when the item is outside its list.
+     * Searches only the item ancestors, falls back to the whole root when the item is outside its list.
      *
      * @param listItem
      */
     searchListOfItem = (listItem: HTMLElement): HTMLElement | null => {
         const listId = String(listItem.getAttribute(this.listIdAttribute));
 
-        return listItem.closest<HTMLElement>(`[${this.listAttribute}="${listId}"]`) ?? this.searchList(listId);
+        return listItem.closest<HTMLElement>(`[${this.listAttribute}="${CSS.escape(listId)}"]`) ?? this.searchList(listId);
     };
 
     /**
@@ -824,7 +883,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param list
      */
     searchListItems = (list: HTMLElement): NodeListOf<HTMLElement> | null => {
-        const listId = list.getAttribute(this.listAttribute) as string;
+        const listId = CSS.escape(list.getAttribute(this.listAttribute) as string);
 
         return list.querySelectorAll(
             `[${this.listItemAttribute}][${this.listIdAttribute}="${listId}"]:not([${this.sourceElementAttribute}]),` +

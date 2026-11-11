@@ -35,6 +35,7 @@ npm install @marekorse/simple-drag-and-drop
 ## 🚀 Usage
 
 ```html
+<div id="board">
 <ul data-list="list1" data-list-shared="group">
    <li data-list-item data-list-id="list1">
       List Item 1
@@ -58,12 +59,14 @@ npm install @marekorse/simple-drag-and-drop
       List Item 3
    </li>
 </ul>
+</div>
 ```
 
 
 ```js
 <script>
    const options = {
+      root: 'board', // Id of the element the instance is mounted on (required)
       animationDuration: 150, // Animation duration in milliseconds
       draggedElementStyle: { 
           opacity: '80%', 
@@ -87,7 +90,7 @@ npm install @marekorse/simple-drag-and-drop
 
 ## 🎯 Drop
 
-While dragging, only a copy of the item moves. The original stays in its place hidden (`display: none`).
+While dragging, only a copy of the item moves. A new drag cannot start until the copy reaches the drop position. The original stays in its place hidden (`display: none`).
 When the copy reaches the drop position:
 
 1. the copy and the preview are removed, the original is shown again in its original place,
@@ -133,6 +136,7 @@ let simpleDragAndDrop = null;
 
 onMounted(() => {
    simpleDragAndDrop = new SimpleDragAndDrop({
+      root: 'board',
       applyMove({ from, to }) {
          const [moved] = lists.value[from.listId].splice(from.index, 1);
          lists.value[to.listId].splice(to.index, 0, moved);
@@ -146,15 +150,18 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-   <ul v-for="(items, listId) in lists" :key="listId" :data-list="listId" data-list-shared="group">
-      <li v-for="item in items" :key="item.id" data-list-item :data-list-id="listId">
-         {{ item.title }}
-      </li>
-   </ul>
+   <div id="board">
+      <ul v-for="(items, listId) in lists" :key="listId" :data-list="listId" data-list-shared="group">
+         <li v-for="item in items" :key="item.id" data-list-item :data-list-id="listId">
+            {{ item.title }}
+         </li>
+      </ul>
+   </div>
 </template>
 ```
 
 - `:key` must be a stable id (not an index), otherwise Vue does not move the element.
+- The root id must be unique on the page, use a different id for every component instance.
 - `:data-list-id` must be bound, Vue updates it when the item moves to another list.
 
 
@@ -165,12 +172,19 @@ onBeforeUnmount(() => {
 
 | Parameter                | Type          | Description                                                                 |
 |--------------------------|---------------|-----------------------------------------------------------------------------|
+| `root`                   | `string`      | **Required.** Id of the element the instance is mounted on. Dragging starts only inside it and only lists inside it are used. |
 | `animationDuration`      | `number`      | Duration of the reorder animation in milliseconds.                          |
 | `draggedElementStyle`    | `object`      | Inline CSS styles applied to the dragged element.                           |
 | `draggedElementClass`    | `string`      | CSS class(es) applied to the dragged element.                               |
 | `previewElementStyle`    | `object`      | Inline CSS styles applied to the preview placeholder.                       |
 | `previewElementClass`    | `string`      | CSS class(es) applied to the preview placeholder element.                   |
 | `dragThreshold`          | `number`      | Distance in pixels the pointer must move before dragging starts. Default: `5`. |
+| `touchDelay`             | `number`      | Touch only: time in ms the finger must be held on an item before it can be dragged. Moving the finger earlier scrolls the page. `0` = no delay, see the warning below. Default: `200`. |
+| `mouseDelay`             | `number`      | Mouse and pen: time in ms the button must be held on an item before it can be dragged. Moving the pointer earlier cancels the drag. `0` = no delay. Default: `0`. |
+
+> ⚠️ **Touch devices:** do not set `touchDelay` to `0` unless you really need it. Without the delay every finger movement
+> that starts on an item drags it, so the page cannot be scrolled over the items and clicking inner elements
+> (buttons, links, inputs) becomes unreliable - a tap with a slight finger movement starts dragging instead of a click.
 | `applyMove`              | `function`    | Moves the dropped item, called only when the position changed. Default: inserts the item in the DOM. See [Drop](#-drop). |
 
 
@@ -207,10 +221,9 @@ onBeforeUnmount(() => {
 | `dragStart`     | `ListItem`                   | Triggered when dragging starts on a list item.                              |
 | `dragOver`      | `ListItem` or `List`         | Fired continuously while dragging. Useful for tracking position or target.  |
 | `dragEnter`     | `ListItem` or `List`         | Triggered when a dragged item enters another `List` or `ListItem.           |
-| `dragEnd`       | —                            | Called when the drag operation completes (drop).                            |
-| `drop`          | `DropPayload`                | Emitted on every drop after `applyMove`, also when the position did not change. See [Drop](#-drop). |
+| `drop`          | `DropPayload`                | End of dragging, emitted on every drop after `applyMove`, also when the position did not change. See [Drop](#-drop). |
 
-> `itemsUpdated` event was removed. Use `drop` instead, see [Drop](#-drop).
+> `itemsUpdated` and `dragEnd` events were removed. Use `drop` instead, see [Drop](#-drop).
 
 
  

@@ -7,6 +7,12 @@ export interface SimpleDragAndDropInterface {
 
   clearEventListeners(): void;
 
+  addDocumentListeners(): void;
+
+  removeDocumentListeners(): void;
+
+  cancelPendingDrag(): void;
+
   onDragStart(event: PointerEvent, clientX: number, clientY: number): void;
 
   onDragMove(event: PointerEvent, clientX: number, clientY: number): void;
@@ -44,6 +50,7 @@ export interface SimpleDragAndDropInterface {
 }
 
 export interface SDDOptionsInterface {
+  root: string;
   animationDuration?: number;
   draggedElementStyle?: Partial<CSSStyleDeclaration>;
   draggedElementClass?: string;
@@ -51,10 +58,15 @@ export interface SDDOptionsInterface {
   previewElementClass?: string;
   dragThreshold?: number;
   /**
-   * Moves the dropped item to its new place. Called only when the position changed, before the 'drop' event.
-   * Default: inserts the item in the DOM (to.parent.insertBefore(item, to.before)).
-   * In a framework update your data instead and let the framework move the element.
+   * Touch only: how long (ms) the finger must be held on an item before it can be dragged.
+   * Moving the finger earlier scrolls the page instead. 0 = drag starts immediately (scrolling over items is not possible).
    */
+  touchDelay?: number;
+  /**
+   * Mouse and pen: how long (ms) the button must be held on an item before it can be dragged.
+   * Moving the pointer earlier cancels the drag. 0 = drag starts immediately.
+   */
+  mouseDelay?: number;
   applyMove?: (payload: DropPayload) => void;
 }
 
