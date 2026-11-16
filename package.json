@@ -11,11 +11,16 @@
       "import": "./dist/SimpleDragAndDrop.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "publishConfig": {
-    "@Marekorse:registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
     "build": "tsdown",
+    "prepublishOnly": "npm run build",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "repository": {
@@ -47,7 +52,6 @@
     "frontend"
   ],
   "devDependencies": {
-    "@types/node": "^22.10.7",
     "tsdown": "^0.23.7",
     "typescript": "^5.8.3"
   }

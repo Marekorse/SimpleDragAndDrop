@@ -12,5 +12,5 @@
     "allowSyntheticDefaultImports": true
   },
   "include": ["src"],
-  "exclude": ["node_modules", "scripts"]
+  "exclude": ["node_modules"]
 }
