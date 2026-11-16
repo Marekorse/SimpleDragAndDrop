@@ -61,7 +61,6 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
     private readonly rootAttribute: string;
     private readonly sourceElementAttribute: string;
     private readonly previewElementAttribute: string;
-    private readonly previewElementOriginalListAttribute: string;
     private readonly previewElementListSharedAttribute: string;
     private readonly listSharedAttribute: string;
     private readonly listAttribute: string;
@@ -159,7 +158,6 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
         this.rootAttribute = 'data-sdd-root';
         this.sourceElementAttribute = 'data-drag-source';
         this.previewElementAttribute = 'data-preview';
-        this.previewElementOriginalListAttribute = 'data-prev-orig-list';
         this.previewElementListSharedAttribute = 'data-prev-list-shared';
         this.listSharedAttribute = 'data-list-shared';
         this.listAttribute = 'data-list';
@@ -812,7 +810,6 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
         const listId = String(referenceElement.getAttribute(this.listIdAttribute));
         const shared = list.getAttribute(this.listSharedAttribute);
 
-        el.setAttribute(this.previewElementOriginalListAttribute, listId);
         el.setAttribute(this.listIdAttribute, listId);
 
         if (shared !== null) {
