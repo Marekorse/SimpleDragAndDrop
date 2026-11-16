@@ -220,7 +220,7 @@ export function Board() {
 
 | Parameter                | Type          | Description                                                                 |
 |--------------------------|---------------|-----------------------------------------------------------------------------|
-| `root`                   | `string`      | **Required.** Id of the element the instance is mounted on. Dragging starts only inside it and only lists inside it are used. |
+| `root`                   | `string`      | **Required.** Id of the element the instance is mounted on. Dragging starts only inside it and only lists inside it are used. Instances can be nested, lists and items belong to the instance with the nearest root (the root gets the `data-sdd-root` attribute). |
 | `animationDuration`      | `number`      | Duration of the reorder animation in milliseconds. Default: `150`.          |
 | `draggedElementStyle`    | `object`      | Inline CSS styles applied to the dragged element.                           |
 | `draggedElementClass`    | `string`      | CSS class(es) applied to the dragged element.                               |
@@ -245,7 +245,7 @@ export function Board() {
 
 | Parameter                   | Required  | Type     | Description                                                                                                            |
 |-----------------------------|-----------|----------|------------------------------------------------------------------------------------------------------------------------|
-| `data-list`                 | ✅ Yes   | `string` | Unique identifier of a draggable list container.                                                                       |
+| `data-list`                 | ✅ Yes   | `string` | Identifier of a draggable list container, must be unique on the page (also across instances).                         |
 | `data-list-shared`          | ⚠️ No    | `string` | Group name. Items can be moved between lists with the same group, without it only within the list.                    |
 | `data-list-has-action-btn`  | ⚠️ No    | —        | Items can be dragged only by their action button (drag handle). Must be used in combination with `data-list-item-action-btn`. |
 | `data-list-drop-disabled`   | ⚠️ No    | —        | Disables dropping into the list.                                                                                       |

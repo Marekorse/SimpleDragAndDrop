@@ -58,6 +58,7 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
     private enteredTarget: HTMLElement | null;
 
     private readonly draggedElementAttribute: string;
+    private readonly rootAttribute: string;
     private readonly sourceElementAttribute: string;
     private readonly previewElementAttribute: string;
     private readonly previewElementOriginalListAttribute: string;
@@ -155,6 +156,7 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
 
         //DATA ATTRIBUTES
         this.draggedElementAttribute = 'data-dragging';
+        this.rootAttribute = 'data-sdd-root';
         this.sourceElementAttribute = 'data-drag-source';
         this.previewElementAttribute = 'data-preview';
         this.previewElementOriginalListAttribute = 'data-prev-orig-list';
@@ -182,6 +184,7 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
     }
 
     init = (): void => {
+        this.root.setAttribute(this.rootAttribute, '');
         this.root.addEventListener('pointerdown', this.handlePointerDown);
     };
 
@@ -265,9 +268,21 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
      * and all listeners added by on are removed.
      */
     destroy = (): void => {
+        this.root.removeAttribute(this.rootAttribute);
         this.root.removeEventListener('pointerdown', this.handlePointerDown);
         this.cancelDrag();
         this.clear();
+    };
+
+    /**
+     * Check if the element belongs to this instance - its nearest root is the root of this instance
+     *
+     * Elements of nested instances and of instances next to this one are not own elements.
+     *
+     * @param element
+     */
+    private isOwnElement = (element: HTMLElement): boolean => {
+        return element.closest(`[${this.rootAttribute}]`) === this.root;
     };
 
     /**
@@ -291,7 +306,8 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
                 (el) => el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute)
             );
 
-            if (!listItem) {
+            //an item of a nested instance is dragged only by that instance
+            if (!listItem || !this.isOwnElement(listItem)) {
                 return;
             }
 
@@ -394,8 +410,8 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
                     el.hasAttribute(this.listItemAttribute) || el.hasAttribute(this.listAttribute) || el.hasAttribute(this.previewElementAttribute)
             );
 
-            //lists of other instances are ignored
-            const item = foundItem && this.root.contains(foundItem) ? foundItem : null;
+            //lists and items of other instances (also nested ones) are ignored
+            const item = foundItem && this.isOwnElement(foundItem) ? foundItem : null;
 
 
             if (item && item !== previewElement && !this.elementsAnimator.isMoved(item, previewElement)) {
