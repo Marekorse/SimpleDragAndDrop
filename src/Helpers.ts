@@ -30,43 +30,6 @@ export const searchParentElement = (el: EventTarget, condition: (el: HTMLElement
 };
 
 /**
- * Get html element child nodes.
- *
- * @param el
- */
-export const getHtmlChildNodes = (el: HTMLElement): HTMLElement[] => {
-    const nodes: HTMLElement[] = []
-
-    el.childNodes.forEach((child) => {
-        if (child.nodeType === Node.ELEMENT_NODE && child instanceof HTMLElement) {
-            nodes.push(child)
-        }
-    })
-
-    return nodes
-}
-
-/**
- * Create an array containing a sequence of numbers between start and end
- *
- * @param start
- * @param end
- */
-export const createRangeFromIndexes = (start: number, end: number) => {
-    if (start > end) {
-        ;[start, end] = [end, start]
-    }
-
-    let rangeArray = []
-
-    for (let i = start; i <= end; i++) {
-        rangeArray.push(i)
-    }
-
-    return rangeArray
-}
-
-/**
  * Get elements array from indexes
  *
  * @param elements
@@ -75,23 +38,11 @@ export const createRangeFromIndexes = (start: number, end: number) => {
  */
 export const getElementsFromIndexes = (elements: HTMLElement[], start: number, end: number): HTMLElement[] => {
     if (start > end) {
-        ;[start, end] = [end, start]
+        [start, end] = [end, start];
     }
 
-    return elements.slice(start, end + 1)
-}
-
-/**
- * Get element index in parent node
- *
- * @param parentEl
- * @param el
- */
-export const getChildIndex = (parentEl: HTMLElement, el: HTMLElement) => {
-    const list = getHtmlChildNodes(parentEl)
-    const parentArray = Array.prototype.slice.call(list)
-    return parentArray.indexOf(el)
-}
+    return elements.slice(start, end + 1);
+};
 
 /**
  * Get element bounding client rect
@@ -99,9 +50,9 @@ export const getChildIndex = (parentEl: HTMLElement, el: HTMLElement) => {
  * @param target
  */
 export const getActualPosition = (target: HTMLElement): { x: number; y: number; w: number; h: number } => {
-    const position = target.getBoundingClientRect()
-    return { x: position.left, y: position.top, w: position.width, h: position.height }
-}
+    const position = target.getBoundingClientRect();
+    return { x: position.left, y: position.top, w: position.width, h: position.height };
+};
 
 /**
  * Add multiple classes to element
@@ -110,20 +61,9 @@ export const getActualPosition = (target: HTMLElement): { x: number; y: number; 
  * @param classString
  */
 export const addMultipleClasses = (element: HTMLElement, classString: string): void => {
-    const classes = classString.split(/\s+/).filter(Boolean)
-    element.classList.add(...classes)
-}
-
-/**
- * Remove multiple classes to element
- *
- * @param element
- * @param classString
- */
-export const removeMultipleClasses = (element: HTMLElement, classString: string): void => {
-    const classes = classString.split(/\s+/).filter(Boolean)
-    element.classList.remove(...classes)
-}
+    const classes = classString.split(/\s+/).filter(Boolean);
+    element.classList.add(...classes);
+};
 
 /**
  * Apply inline styles to element
@@ -136,16 +76,16 @@ export const removeMultipleClasses = (element: HTMLElement, classString: string)
 export const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclaration>): void => {
     for (const [key, value] of Object.entries(styles)) {
         if (typeof value !== 'string' && typeof value !== 'number') {
-            continue
+            continue;
         }
 
         if (key.includes('-')) {
-            element.style.setProperty(key, String(value))
+            element.style.setProperty(key, String(value));
         } else if (key in element.style) {
-            (element.style as any)[key] = String(value)
+            (element.style as any)[key] = String(value);
         }
     }
-}
+};
 
 /**
  * Get element layout position without the in-progress transform animation
@@ -155,9 +95,9 @@ export const applyStyles = (element: HTMLElement, styles: Partial<CSSStyleDeclar
  * @param target
  */
 export const getLayoutPosition = (target: HTMLElement): { x: number; y: number } => {
-    const rect = target.getBoundingClientRect()
-    const transform = getComputedStyle(target).transform
-    const matrix = transform && transform !== 'none' ? new DOMMatrix(transform) : null
+    const rect = target.getBoundingClientRect();
+    const transform = getComputedStyle(target).transform;
+    const matrix = transform && transform !== 'none' ? new DOMMatrix(transform) : null;
 
-    return { x: rect.left - (matrix?.m41 ?? 0), y: rect.top - (matrix?.m42 ?? 0) }
-}
+    return { x: rect.left - (matrix?.m41 ?? 0), y: rect.top - (matrix?.m42 ?? 0) };
+};

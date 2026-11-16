@@ -1,32 +1,4 @@
-export type Axis = 'x' | 'y';
-export type Direction = 'f' | 'b';
-
-export interface ScrollTarget {
-    axis: Axis;
-    direction: Direction;
-    element: Element;
-}
-
-export interface AutoScrollerInterface {
-    speed?: number;
-    threshold?: number;
-
-    shouldEnableAutoScroller(x: number, y: number, el?: Element | null): void;
-
-    getViewportScrollTarget(x: number, y: number, el: Element): ScrollTarget | null;
-
-    getContainerScrollTarget(x: number, y: number, el: Element): ScrollTarget | null;
-
-    isRootElement(element: Element): boolean;
-
-    isScrollable(axis: Axis, element: Element): boolean;
-
-    isScrolledToEnd(axis: Axis, direction: Direction, element: Element): boolean;
-
-    startScroller(axis: Axis, direction: Direction, scrollableElement: Element, distance: number): void;
-
-    stopScroller(): void;
-}
+import {Axis, AutoScrollerInterface, Direction, ScrollTarget} from './Interfaces';
 
 /**
  *
@@ -36,7 +8,7 @@ export interface AutoScrollerInterface {
  *
  */
 
-export default class AutoScroller implements AutoScrollerInterface {
+export class AutoScroller implements AutoScrollerInterface {
     private readonly scrollToPositionThreshold: number;
     private readonly scrollSpeed: number;
     private startTime: DOMHighResTimeStamp | null;
@@ -67,7 +39,7 @@ export default class AutoScroller implements AutoScrollerInterface {
      * @param y
      * @param el element under the pointer, if already known
      */
-    shouldEnableAutoScroller(x: number, y: number, el: Element | null = document.elementFromPoint(x, y)): void {
+    shouldEnableAutoScroller = (x: number, y: number, el: Element | null = document.elementFromPoint(x, y)): void => {
 
         if (el) {
             const target = this.getViewportScrollTarget(x, y, el) ?? this.getContainerScrollTarget(x, y, el);
@@ -78,7 +50,7 @@ export default class AutoScroller implements AutoScrollerInterface {
                 this.stopScroller();
             }
         }
-    }
+    };
 
     /**
      * Find the outermost scrollable element when the pointer is near the viewport edge
@@ -87,7 +59,7 @@ export default class AutoScroller implements AutoScrollerInterface {
      * @param y
      * @param el
      */
-    getViewportScrollTarget(x: number, y: number, el: Element): ScrollTarget | null {
+    getViewportScrollTarget = (x: number, y: number, el: Element): ScrollTarget | null => {
         const vw: number = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
         const vh: number = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
         const threshold = this.scrollToPositionThreshold;
@@ -120,7 +92,7 @@ export default class AutoScroller implements AutoScrollerInterface {
         }
 
         return null;
-    }
+    };
 
     /**
      * Find the nearest scrollable container whose edge is under the pointer
@@ -129,7 +101,7 @@ export default class AutoScroller implements AutoScrollerInterface {
      * @param y
      * @param el
      */
-    getContainerScrollTarget(x: number, y: number, el: Element): ScrollTarget | null {
+    getContainerScrollTarget = (x: number, y: number, el: Element): ScrollTarget | null => {
         const threshold = this.scrollToPositionThreshold;
         let currentEl: Element | null = el;
 
@@ -162,14 +134,14 @@ export default class AutoScroller implements AutoScrollerInterface {
         }
 
         return null;
-    }
+    };
 
     /**
      * Start scrolling the target, restart only when the target has changed
      *
      * @param target
      */
-    scrollTo(target: ScrollTarget): void {
+    scrollTo = (target: ScrollTarget): void => {
         const actual = this.actualScrollTarget;
 
         if (actual && actual.axis === target.axis && actual.direction === target.direction && actual.element === target.element) {
@@ -179,7 +151,7 @@ export default class AutoScroller implements AutoScrollerInterface {
         this.stopScroller();
         this.actualScrollTarget = target;
         this.startScroller(target.axis, target.direction, target.element);
-    }
+    };
 
     /**
      * Check if the document root (scrolled by the viewport)
@@ -232,7 +204,7 @@ export default class AutoScroller implements AutoScrollerInterface {
      * @param distance
      */
 
-    startScroller(axis: Axis, direction: Direction, scrollableElement: Element, distance: number = 0): void {
+    startScroller = (axis: Axis, direction: Direction, scrollableElement: Element, distance: number = 0): void => {
         if (this.scrollAnimationState === null) {
             this.scrollAnimationState = requestAnimationFrame((timestamp) => {
                 if (!this.startTime) {
@@ -260,12 +232,12 @@ export default class AutoScroller implements AutoScrollerInterface {
                 this.startScroller(axis, direction, scrollableElement, distance);
             });
         }
-    }
+    };
 
     /**
      * stop scroller
      */
-    stopScroller(): void {
+    stopScroller = (): void => {
         if (this.scrollAnimationState) {
             cancelAnimationFrame(this.scrollAnimationState);
         }
@@ -273,5 +245,5 @@ export default class AutoScroller implements AutoScrollerInterface {
         this.startTime = null;
         this.scrollAnimationState = null;
         this.actualScrollTarget = null;
-    }
+    };
 }

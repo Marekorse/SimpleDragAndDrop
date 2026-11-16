@@ -3,7 +3,7 @@
 //TODO:: Skus viac typov animacii
 //TODO:: Ak si trufas sprav dalsiu verziu SDD kde bude tahat elementy v gride nie v listoch :)
 
-import AutoScroller from './AutoScroller';
+import {AutoScroller} from './AutoScroller';
 import {ElementsAnimator} from './ElementsAnimator';
 import {createEmitter} from './Emitter';
 import {
@@ -53,7 +53,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         offsetX: number;
         offsetY: number;
         directionY: number;
-        directionX: number;
     };
     private sourceElement: HTMLElement | null;
     private readonly sourceElementOriginalDisplay = new WeakMap<HTMLElement, { value: string; priority: string }>();
@@ -149,8 +148,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             y: 0,
             offsetX: 0,
             offsetY: 0,
-            directionY: 0,
-            directionX: 0
+            directionY: 0
         };
 
         this.sourceElement = null;
@@ -276,7 +274,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param clientX
      * @param clientY
      */
-    onDragStart(event: PointerEvent, clientX: number, clientY: number): void {
+    onDragStart = (event: PointerEvent, clientX: number, clientY: number): void => {
         const target = event.target;
 
         //left mouse
@@ -325,7 +323,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 }
             }
         }
-    }
+    };
 
     /**
      * Basic Function for determining whether and where the dragged element should be placed
@@ -334,7 +332,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param x
      * @param y
      */
-    onDragMove(event: PointerEvent, x: number, y: number) {
+    onDragMove = (event: PointerEvent, x: number, y: number): void => {
 
         if (!this.pendingDragStart && !this.draggedElement || event.pointerId !== this.activePointerId) {
             return;
@@ -431,13 +429,6 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 }
             }
 
-            if (this.draggedElementPosition.x !== x) {
-                Object.assign(this.draggedElementPosition, {
-                    x: x,
-                    directionX: x > this.draggedElementPosition.x ? 1 : -1
-                });
-            }
-
             if (this.draggedElementPosition.y !== y) {
                 Object.assign(this.draggedElementPosition, {
                     y: y,
@@ -451,7 +442,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             this.emit('dragOver', item);
             this.autoScroller.shouldEnableAutoScroller(x, y, target);
         }
-    }
+    };
 
     /**
      * End of dragging - the dragged copy flies to the preview position, then finishDrop is called
@@ -670,7 +661,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const elementsForAnimation = getElementsFromIndexes(listItems, previewElIndex, listItemIndex);
 
         if (clientY > ListItemCenterPoint) {
-            if (listItemIndex > Number(previewElIndex)) {
+            if (listItemIndex > previewElIndex) {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
                     listItemParentEl.insertBefore(previewElement, listItems[listItemIndex].nextElementSibling);
                 });
@@ -680,7 +671,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 });
             }
         } else if (clientY < ListItemCenterPoint) {
-            if (listItemIndex < Number(previewElIndex)) {
+            if (listItemIndex < previewElIndex) {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
                     listItemParentEl.insertBefore(previewElement, listItems[listItemIndex]);
                 });
@@ -755,8 +746,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         draggedElement.style.position = 'fixed';
         draggedElement.style.touchAction = 'none';
         draggedElement.style.pointerEvents = 'none';
-        draggedElement.style.left = String(0);
-        draggedElement.style.top = String(0);
+        draggedElement.style.left = '0';
+        draggedElement.style.top = '0';
         draggedElement.style.transform = `translate(${x - this.draggedElementPosition.offsetX}px, ${y - this.draggedElementPosition.offsetY}px)`;
 
         return draggedElement;
@@ -872,8 +863,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
             y: 0,
             offsetX: 0,
             offsetY: 0,
-            directionY: 0,
-            directionX: 0
+            directionY: 0
         };
     };
 

@@ -1,7 +1,7 @@
-import { EmitterInterface, EmitterEventInterface } from './Interfaces'
+import {EmitterInterface, EmitterEventInterface} from './Interfaces';
 
 export const createEmitter = (): EmitterInterface => {
-    const events: EmitterEventInterface = {}
+    const events: EmitterEventInterface = {};
 
     /**
      * Creates a custom listener for an event.
@@ -11,11 +11,11 @@ export const createEmitter = (): EmitterInterface => {
      */
     const on = (eventName: string, listener: (data: any) => void): void => {
         if (!events[eventName]) {
-            events[eventName] = []
+            events[eventName] = [];
         }
 
-        events[eventName].push(listener)
-    }
+        events[eventName].push(listener);
+    };
 
     /**
      * Emits a custom event.
@@ -24,14 +24,14 @@ export const createEmitter = (): EmitterInterface => {
      * @param data The data to be passed to the listeners.
      */
     const emit = (eventName: string, data: any): void => {
-        const eventListeners = events[eventName]
+        const eventListeners = events[eventName];
         if (eventListeners) {
-            eventListeners.forEach((listener) => listener(data))
+            eventListeners.forEach((listener) => listener(data));
         }
-    }
+    };
 
     return {
         on,
         emit,
-    }
-}
+    };
+};
