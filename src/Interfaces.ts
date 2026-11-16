@@ -15,13 +15,13 @@ export interface SimpleDragAndDropInterface {
 
     cancelDrag(): void;
 
-    onDragStart(event: PointerEvent, clientX: number, clientY: number): void;
+    onDragStart(event: PointerEvent, x: number, y: number): void;
 
-    onDragMove(event: PointerEvent, clientX: number, clientY: number): void;
+    onDragMove(event: PointerEvent, x: number, y: number): void;
 
     onDragEnd(event?: PointerEvent): void;
 
-    finishDrop(previewElement: HTMLElement, draggedElement: HTMLElement, sourceElement: HTMLElement, previewElList: HTMLElement, previewElOriginalList: HTMLElement, draggedElementOriginalIndex: number): DropPayload;
+    finishDrop(previewElement: HTMLElement, draggedElement: HTMLElement, sourceElement: HTMLElement, previewElementList: HTMLElement, previewElementOriginalList: HTMLElement, draggedElementOriginalIndex: number): DropPayload;
 
 
     createDraggedCopy(target: HTMLElement): HTMLElement;
@@ -32,9 +32,9 @@ export interface SimpleDragAndDropInterface {
 
     defaultApplyMove(payload: DropPayload): void;
 
-    placeElementToList(draggedElement: HTMLElement, y: number, list: HTMLElement): void;
+    placeElementToList(previewElement: HTMLElement, y: number, list: HTMLElement): void;
 
-    replaceElement(clientY: number, target: HTMLElement, draggedElement: HTMLElement): void;
+    replaceElement(y: number, listItem: HTMLElement, previewElement: HTMLElement): void;
 
     createDraggedElement(list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement;
 
@@ -42,7 +42,7 @@ export interface SimpleDragAndDropInterface {
 
     resetDraggingState(): void;
 
-    updateDraggedElPosition(draggedEl: HTMLElement, x: number, y: number): void;
+    updateDraggedElementPosition(draggedElement: HTMLElement, x: number, y: number): void;
 
     searchList(listId: string): HTMLElement | null;
 
@@ -87,6 +87,14 @@ export interface DropPayload {
     };
 }
 
+/** element position and size in the viewport */
+export interface Rect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
 export interface ElementsAnimatorInterface {
     animationDuration: number;
     animationAttribute: string;
@@ -97,7 +105,7 @@ export interface ElementsAnimatorInterface {
 
     removeAnimation(target: HTMLElement): void;
 
-    isInViewport(position: { x: number; y: number; w: number; h: number }): boolean;
+    isInViewport(position: Rect): boolean;
 
     animate(el: HTMLElement, x: number, y: number, after?: () => void): void;
 

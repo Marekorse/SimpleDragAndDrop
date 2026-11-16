@@ -1,8 +1,3 @@
-//TODO:: Multi drag
-//TODO:: Locknutie OSY
-//TODO:: Skus viac typov animacii
-//TODO:: Ak si trufas sprav dalsiu verziu SDD kde bude tahat elementy v gride nie v listoch :)
-
 import {AutoScroller} from './AutoScroller';
 import {ElementsAnimator} from './ElementsAnimator';
 import {createEmitter} from './Emitter';
@@ -107,8 +102,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         }
     };
 
-    on!: (event: string, listener: (...args: any[]) => void) => void;
-    emit!: (event: string, ...args: any[]) => void;
+    on!: EmitterInterface['on'];
+    emit!: EmitterInterface['emit'];
 
     /**
      * Constructor
@@ -271,10 +266,10 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * Validate dragged item and Setup base attributes for dragged item
      *
      * @param event
-     * @param clientX
-     * @param clientY
+     * @param x
+     * @param y
      */
-    onDragStart = (event: PointerEvent, clientX: number, clientY: number): void => {
+    onDragStart = (event: PointerEvent, x: number, y: number): void => {
         const target = event.target;
 
         //left mouse
@@ -303,8 +298,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                     const pendingDragStart = {
                         listItem: listItem,
                         list: list,
-                        x: clientX,
-                        y: clientY,
+                        x: x,
+                        y: y,
                         delayTimer: null as number | null
                     };
 
@@ -383,7 +378,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         if (target && draggedElement && previewElement) {
             event.preventDefault();
-            this.updateDraggedElPosition(draggedElement, x, y);
+            this.updateDraggedElementPosition(draggedElement, x, y);
 
             const foundItem = searchParentElement(
                 target,
@@ -460,8 +455,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const draggedElement = this.draggedElement as HTMLElement;
         const sourceElement = this.sourceElement as HTMLElement;
         const previewElement = this.previewElement as HTMLElement;
-        const previewElList = this.previewElementList as HTMLElement;
-        const previewElOriginalList = this.previewElementOriginalList as HTMLElement;
+        const previewElementList = this.previewElementList as HTMLElement;
+        const previewElementOriginalList = this.previewElementOriginalList as HTMLElement;
         const draggedElementOriginalIndex = this.draggedElementOriginalIndex as number;
 
         if (draggedElement && sourceElement && previewElement) {
@@ -474,10 +469,10 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
                 const marginTop = parseFloat(computedStyle.marginTop);
 
                 this.elementsAnimator.animate(draggedElement, position.x - marginLeft, position.y - marginTop, () => {
-                    this.finishDrop(previewElement, draggedElement, sourceElement, previewElList, previewElOriginalList, draggedElementOriginalIndex);
+                    this.finishDrop(previewElement, draggedElement, sourceElement, previewElementList, previewElementOriginalList, draggedElementOriginalIndex);
                 });
             } else {
-                this.finishDrop(previewElement, draggedElement, sourceElement, previewElList, previewElOriginalList, draggedElementOriginalIndex);
+                this.finishDrop(previewElement, draggedElement, sourceElement, previewElementList, previewElementOriginalList, draggedElementOriginalIndex);
             }
         }
     };
@@ -522,20 +517,20 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param previewElement
      * @param draggedElement dragged copy
      * @param sourceElement hidden original
-     * @param previewElList list where the item was dropped
-     * @param previewElOriginalList list where the item was dragged from
+     * @param previewElementList list where the item was dropped
+     * @param previewElementOriginalList list where the item was dragged from
      * @param draggedElementOriginalIndex
      */
     finishDrop = (
         previewElement: HTMLElement,
         draggedElement: HTMLElement,
         sourceElement: HTMLElement,
-        previewElList: HTMLElement,
-        previewElOriginalList: HTMLElement,
+        previewElementList: HTMLElement,
+        previewElementOriginalList: HTMLElement,
         draggedElementOriginalIndex: number
     ): DropPayload => {
         //the hidden original is not counted, so this is the index of the item after the move
-        const toIndex = Array.from(this.searchListItems(previewElList) as NodeList).indexOf(previewElement);
+        const toIndex = Array.from(this.searchListItems(previewElementList) as NodeList).indexOf(previewElement);
         const parent = previewElement.parentElement as HTMLElement;
         let before = previewElement.nextSibling;
 
@@ -546,13 +541,13 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const payload: DropPayload = {
             item: sourceElement,
             from: {
-                list: previewElOriginalList,
-                listId: String(previewElOriginalList.getAttribute(this.listAttribute)),
+                list: previewElementOriginalList,
+                listId: String(previewElementOriginalList.getAttribute(this.listAttribute)),
                 index: draggedElementOriginalIndex
             },
             to: {
-                list: previewElList,
-                listId: String(previewElList.getAttribute(this.listAttribute)),
+                list: previewElementList,
+                listId: String(previewElementList.getAttribute(this.listAttribute)),
                 index: toIndex,
                 parent: parent,
                 before: before
@@ -594,13 +589,13 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      */
     placeElementToList = (previewElement: HTMLElement, y: number, list: HTMLElement): void => {
         const listItems = Array.from(this.searchListItems(list) as NodeList) as HTMLElement[];
-        const previewElList = this.previewElementList as HTMLElement;
-        const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList) as HTMLElement[];
-        const previewElIndex = previewElListItems.indexOf(previewElement);
-        const previewElElementsForAnimation = getElementsFromIndexes(previewElListItems, previewElIndex, previewElListItems.length - 1);
+        const previewElementList = this.previewElementList as HTMLElement;
+        const previewElementListItems = Array.from(this.searchListItems(previewElementList) as NodeList) as HTMLElement[];
+        const previewElementIndex = previewElementListItems.indexOf(previewElement);
+        const previewListElementsForAnimation = getElementsFromIndexes(previewElementListItems, previewElementIndex, previewElementListItems.length - 1);
 
         if (listItems.length === 0) {
-            this.elementsAnimator.animateElementsMovement(previewElElementsForAnimation, () => {
+            this.elementsAnimator.animateElementsMovement(previewListElementsForAnimation, () => {
                 list.insertBefore(previewElement, null);
             });
 
@@ -613,7 +608,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
         const lastElementPosition = getActualPosition(listItems[listItems.length - 1]);
 
         if (y > lastElementPosition.y + lastElementPosition.h) {
-            this.elementsAnimator.animateElementsMovement(previewElElementsForAnimation, () => {
+            this.elementsAnimator.animateElementsMovement(previewListElementsForAnimation, () => {
                 list.appendChild(previewElement);
             });
 
@@ -627,27 +622,27 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     /**
      *  Placing the dragged element in the list based on direction and position
      *
-     * @param clientY
+     * @param y
      * @param listItem
      * @param previewElement
      */
-    replaceElement = (clientY: number, listItem: HTMLElement, previewElement: HTMLElement): void => {
-        const listItemParentEl = listItem.parentNode as HTMLElement;
+    replaceElement = (y: number, listItem: HTMLElement, previewElement: HTMLElement): void => {
+        const listItemParentElement = listItem.parentNode as HTMLElement;
         const list = this.searchListOfItem(listItem) as HTMLElement;
         const listItems = Array.from(this.searchListItems(list) as NodeList) as HTMLElement[];
         const listItemIndex = listItems.indexOf(listItem);
-        const previewElList = this.previewElementList as HTMLElement;
-        const previewElListItems = Array.from(this.searchListItems(previewElList) as NodeList) as HTMLElement[];
-        const previewElIndex = previewElListItems.indexOf(previewElement);
+        const previewElementList = this.previewElementList as HTMLElement;
+        const previewElementListItems = Array.from(this.searchListItems(previewElementList) as NodeList) as HTMLElement[];
+        const previewElementIndex = previewElementListItems.indexOf(previewElement);
 
         //ELEMENT FROM ANOTHER LIST DOES NOT REQUIRE CALCULATION
-        if (previewElList.getAttribute(this.listAttribute) !== list.getAttribute(this.listAttribute)) {
-            const previewElElementsForAnimation = getElementsFromIndexes(previewElListItems, previewElIndex, previewElListItems.length - 1);
+        if (previewElementList.getAttribute(this.listAttribute) !== list.getAttribute(this.listAttribute)) {
+            const previewListElementsForAnimation = getElementsFromIndexes(previewElementListItems, previewElementIndex, previewElementListItems.length - 1);
             const elementsForAnimation = getElementsFromIndexes(listItems, listItemIndex, listItems.length - 1);
-            const AllElementForAnimation = previewElElementsForAnimation.concat(elementsForAnimation);
+            const allElementsForAnimation = previewListElementsForAnimation.concat(elementsForAnimation);
 
-            this.elementsAnimator.animateElementsMovement(AllElementForAnimation, () => {
-                listItemParentEl.insertBefore(previewElement, listItem);
+            this.elementsAnimator.animateElementsMovement(allElementsForAnimation, () => {
+                listItemParentElement.insertBefore(previewElement, listItem);
             });
 
             this.previewElementList = list;
@@ -657,27 +652,27 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
 
         //CALCULATE CENTER POINT OF ELEMENT
         const listItemRect = listItem.getBoundingClientRect();
-        const ListItemCenterPoint = listItemRect.y + listItemRect.height / 2;
-        const elementsForAnimation = getElementsFromIndexes(listItems, previewElIndex, listItemIndex);
+        const listItemCenterPoint = listItemRect.y + listItemRect.height / 2;
+        const elementsForAnimation = getElementsFromIndexes(listItems, previewElementIndex, listItemIndex);
 
-        if (clientY > ListItemCenterPoint) {
-            if (listItemIndex > previewElIndex) {
+        if (y > listItemCenterPoint) {
+            if (listItemIndex > previewElementIndex) {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
-                    listItemParentEl.insertBefore(previewElement, listItems[listItemIndex].nextElementSibling);
+                    listItemParentElement.insertBefore(previewElement, listItems[listItemIndex].nextElementSibling);
                 });
             } else {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
-                    listItemParentEl.insertBefore(previewElement, listItems[listItemIndex]);
+                    listItemParentElement.insertBefore(previewElement, listItems[listItemIndex]);
                 });
             }
-        } else if (clientY < ListItemCenterPoint) {
-            if (listItemIndex < previewElIndex) {
+        } else if (y < listItemCenterPoint) {
+            if (listItemIndex < previewElementIndex) {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
-                    listItemParentEl.insertBefore(previewElement, listItems[listItemIndex]);
+                    listItemParentElement.insertBefore(previewElement, listItems[listItemIndex]);
                 });
             } else if (listItemIndex >= 0 && listItemIndex < listItems.length) {
                 this.elementsAnimator.animateElementsMovement(elementsForAnimation, () => {
-                    listItemParentEl.insertBefore(previewElement, listItems[listItemIndex].nextElementSibling);
+                    listItemParentElement.insertBefore(previewElement, listItems[listItemIndex].nextElementSibling);
                 });
             }
         }
@@ -874,7 +869,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param x
      * @param y
      */
-    updateDraggedElPosition = (draggedElement: HTMLElement, x: number, y: number): void => {
+    updateDraggedElementPosition = (draggedElement: HTMLElement, x: number, y: number): void => {
         draggedElement.style.transform = `translate(${x - this.draggedElementPosition.offsetX}px, ${y - this.draggedElementPosition.offsetY}px)`;
     };
 

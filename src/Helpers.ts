@@ -1,3 +1,5 @@
+import {Rect} from './Interfaces';
+
 /** ----- Helper functions ----- **/
 
 /**
@@ -49,7 +51,7 @@ export const getElementsFromIndexes = (elements: HTMLElement[], start: number, e
  *
  * @param target
  */
-export const getActualPosition = (target: HTMLElement): { x: number; y: number; w: number; h: number } => {
+export const getActualPosition = (target: HTMLElement): Rect => {
     const position = target.getBoundingClientRect();
     return { x: position.left, y: position.top, w: position.width, h: position.height };
 };

@@ -76,14 +76,14 @@ export class AutoScroller implements AutoScrollerInterface {
             }
 
             let scrollableElement: Element | null = null;
-            let currentEl: Element | null = el;
+            let currentElement: Element | null = el;
 
-            while (currentEl) {
-                if (this.isScrollable(axis, currentEl) && !this.isScrolledToEnd(axis, direction, currentEl)) {
-                    scrollableElement = currentEl;
+            while (currentElement) {
+                if (this.isScrollable(axis, currentElement) && !this.isScrolledToEnd(axis, direction, currentElement)) {
+                    scrollableElement = currentElement;
                 }
 
-                currentEl = currentEl.parentElement;
+                currentElement = currentElement.parentElement;
             }
 
             if (scrollableElement) {
@@ -103,18 +103,18 @@ export class AutoScroller implements AutoScrollerInterface {
      */
     getContainerScrollTarget = (x: number, y: number, el: Element): ScrollTarget | null => {
         const threshold = this.scrollToPositionThreshold;
-        let currentEl: Element | null = el;
+        let currentElement: Element | null = el;
 
-        while (currentEl) {
+        while (currentElement) {
             //root element edges are the viewport edges
-            if (!this.isRootElement(currentEl)) {
-                const rect = currentEl.getBoundingClientRect();
+            if (!this.isRootElement(currentElement)) {
+                const rect = currentElement.getBoundingClientRect();
 
                 //visible area without borders and scrollbars
-                const left = rect.left + currentEl.clientLeft;
-                const top = rect.top + currentEl.clientTop;
-                const right = left + currentEl.clientWidth;
-                const bottom = top + currentEl.clientHeight;
+                const left = rect.left + currentElement.clientLeft;
+                const top = rect.top + currentElement.clientTop;
+                const right = left + currentElement.clientWidth;
+                const bottom = top + currentElement.clientHeight;
 
                 const edges: Array<[Axis, Direction, boolean]> = [
                     ['x', 'f', x > right - threshold && x <= right],
@@ -124,13 +124,13 @@ export class AutoScroller implements AutoScrollerInterface {
                 ];
 
                 for (const [axis, direction, isNearEdge] of edges) {
-                    if (isNearEdge && this.isScrollable(axis, currentEl) && !this.isScrolledToEnd(axis, direction, currentEl)) {
-                        return {axis, direction, element: currentEl};
+                    if (isNearEdge && this.isScrollable(axis, currentElement) && !this.isScrolledToEnd(axis, direction, currentElement)) {
+                        return {axis, direction, element: currentElement};
                     }
                 }
             }
 
-            currentEl = currentEl.parentElement;
+            currentElement = currentElement.parentElement;
         }
 
         return null;

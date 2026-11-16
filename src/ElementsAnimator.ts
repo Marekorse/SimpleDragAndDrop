@@ -1,4 +1,4 @@
-import {ElementsAnimatorInterface} from './Interfaces';
+import {ElementsAnimatorInterface, Rect} from './Interfaces';
 import {getActualPosition} from './Helpers';
 
 export class ElementsAnimator implements ElementsAnimatorInterface {
@@ -60,7 +60,7 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
      *
      * @param position
      */
-    isInViewport = (position: { x: number; y: number; w: number; h: number }): boolean => {
+    isInViewport = (position: Rect): boolean => {
         return position.x + position.w > 0 && position.x < window.innerWidth && position.y + position.h > 0 && position.y < window.innerHeight;
     };
 
