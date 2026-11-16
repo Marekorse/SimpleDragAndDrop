@@ -83,6 +83,17 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     private readonly handlePointerDown = (e: PointerEvent): void => this.onDragStart(e, e.clientX, e.clientY);
     private readonly handlePointerMove = (e: PointerEvent): void => this.onDragMove(e, e.clientX, e.clientY);
     private readonly handlePointerEnd = (e: PointerEvent): void => this.onDragEnd(e);
+    //the browser took over the pointer (scroll, system gesture) - this is not a drop
+    private readonly handlePointerCancel = (e: PointerEvent): void => {
+        if (e.pointerId === this.activePointerId) {
+            this.cancelDrag();
+        }
+    };
+    private readonly handleKeyDown = (e: KeyboardEvent): void => {
+        if (e.key === 'Escape') {
+            this.cancelDrag();
+        }
+    };
     private readonly preventDefault = (e: Event): void => e.preventDefault();
     private readonly preventDefaultUnlessTouchDelay = (e: Event): void => {
         //during the touch delay the page can scroll, scrolling cancels the pending drag (pointercancel)
@@ -185,7 +196,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     addDocumentListeners = (): void => {
         document.addEventListener('pointermove', this.handlePointerMove, {passive: false});
         document.addEventListener('pointerup', this.handlePointerEnd);
-        document.addEventListener('pointercancel', this.handlePointerEnd);
+        document.addEventListener('pointercancel', this.handlePointerCancel);
+        document.addEventListener('keydown', this.handleKeyDown);
         document.addEventListener('touchmove', this.preventDefaultUnlessTouchDelay, {passive: false});
         document.addEventListener('dragstart', this.preventDefault);
         document.addEventListener('selectstart', this.preventDefaultWhileDragging);
@@ -199,7 +211,8 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     removeDocumentListeners = (): void => {
         document.removeEventListener('pointermove', this.handlePointerMove);
         document.removeEventListener('pointerup', this.handlePointerEnd);
-        document.removeEventListener('pointercancel', this.handlePointerEnd);
+        document.removeEventListener('pointercancel', this.handlePointerCancel);
+        document.removeEventListener('keydown', this.handleKeyDown);
         document.removeEventListener('touchmove', this.preventDefaultUnlessTouchDelay);
         document.removeEventListener('dragstart', this.preventDefault);
         document.removeEventListener('selectstart', this.preventDefaultWhileDragging);
@@ -220,11 +233,40 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     };
 
     /**
-     * Remove all event listeners(for SPA).
+     * Cancel the drag without a drop - the DOM is restored to the state before dragging
+     *
+     * applyMove is not called and the 'drop' event is not emitted.
+     * Works also while the copy flies to the drop position.
+     */
+    cancelDrag = (): void => {
+        this.cancelPendingDrag();
+        this.autoScroller.stopScroller();
+
+        const {draggedElement, previewElement, sourceElement} = this;
+
+        if (!draggedElement || !previewElement || !sourceElement) {
+            return;
+        }
+
+        //the copy can be flying to the drop position - its finishDrop must not run
+        const animation = draggedElement.getAttribute(this.elementsAnimator.animationAttribute);
+
+        if (animation !== null) {
+            clearTimeout(Number(animation));
+        }
+
+        draggedElement.remove();
+        previewElement.remove();
+        this.showSourceElement(sourceElement);
+        this.resetDraggingState();
+    };
+
+    /**
+     * Remove all event listeners(for SPA), a running drag is cancelled.
      */
     clearEventListeners = (): void => {
         this.root.removeEventListener('pointerdown', this.handlePointerDown);
-        this.cancelPendingDrag();
+        this.cancelDrag();
     };
 
     /**
@@ -414,7 +456,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     /**
      * End of dragging - the dragged copy flies to the preview position, then finishDrop is called
      *
-     * @param event pointerup/pointercancel, when omitted the drag is ended regardless of the pointer
+     * @param event pointerup, when omitted the drag is ended regardless of the pointer
      */
     onDragEnd = (event?: PointerEvent): void => {
         if (event && event.pointerId !== this.activePointerId) {

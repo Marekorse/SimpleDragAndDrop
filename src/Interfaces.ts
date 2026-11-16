@@ -13,6 +13,8 @@ export interface SimpleDragAndDropInterface {
 
   cancelPendingDrag(): void;
 
+  cancelDrag(): void;
+
   onDragStart(event: PointerEvent, clientX: number, clientY: number): void;
 
   onDragMove(event: PointerEvent, clientX: number, clientY: number): void;

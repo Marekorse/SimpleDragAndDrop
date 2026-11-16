@@ -104,6 +104,10 @@ update your data there and let the framework move the element.
 
 `applyMove` must always reflect the move, otherwise the item stays in its original list with a wrong `data-list-id`.
 
+The drag is cancelled without a drop when `Escape` is pressed, when the browser takes over the pointer (`pointercancel`, e.g. a system gesture)
+or when `clearEventListeners()` is called during the drag. The item stays in its original place, `applyMove`
+is not called and the `drop` event is not emitted.
+
 Payload of `applyMove` and the `drop` event:
 
 ```ts
@@ -182,10 +186,11 @@ onBeforeUnmount(() => {
 | `touchDelay`             | `number`      | Touch only: time in ms the finger must be held on an item before it can be dragged. Moving the finger earlier scrolls the page. `0` = no delay, see the warning below. Default: `200`. |
 | `mouseDelay`             | `number`      | Mouse and pen: time in ms the button must be held on an item before it can be dragged. Moving the pointer earlier cancels the drag. `0` = no delay. Default: `0`. |
 
+| `applyMove`              | `function`    | Moves the dropped item, called only when the position changed. Default: inserts the item in the DOM. See [Drop](#-drop). |
+
 > ⚠️ **Touch devices:** do not set `touchDelay` to `0` unless you really need it. Without the delay every finger movement
 > that starts on an item drags it, so the page cannot be scrolled over the items and clicking inner elements
 > (buttons, links, inputs) becomes unreliable - a tap with a slight finger movement starts dragging instead of a click.
-| `applyMove`              | `function`    | Moves the dropped item, called only when the position changed. Default: inserts the item in the DOM. See [Drop](#-drop). |
 
 
 
