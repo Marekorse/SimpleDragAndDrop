@@ -19,7 +19,7 @@ import {
 
 export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces';
 
-export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInterface {
+ export class SimpleDragAndDrop implements SimpleDragAndDropInterface {
     public readonly options!: SDDOptionsInterface;
     public readonly root: HTMLElement;
     public readonly applyMove: (payload: DropPayload) => void;
@@ -103,7 +103,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     };
 
     on!: EmitterInterface['on'];
-    emit!: EmitterInterface['emit'];
+    private emit!: EmitterInterface['emit'];
 
     /**
      * Constructor
@@ -186,7 +186,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * touchmove is added on pointerdown, which comes before touchstart, so the browser knows it can block scrolling.
      */
-    addDocumentListeners = (): void => {
+    private addDocumentListeners = (): void => {
         document.addEventListener('pointermove', this.handlePointerMove, {passive: false});
         document.addEventListener('pointerup', this.handlePointerEnd);
         document.addEventListener('pointercancel', this.handlePointerCancel);
@@ -201,7 +201,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     /**
      * Remove document listeners added for one drag
      */
-    removeDocumentListeners = (): void => {
+    private removeDocumentListeners = (): void => {
         document.removeEventListener('pointermove', this.handlePointerMove);
         document.removeEventListener('pointerup', this.handlePointerEnd);
         document.removeEventListener('pointercancel', this.handlePointerCancel);
@@ -215,7 +215,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
     /**
      * Cancel a drag that has not started yet (waiting for threshold or touch delay)
      */
-    cancelPendingDrag = (): void => {
+    private cancelPendingDrag = (): void => {
         if (this.pendingDragStart?.delayTimer) {
             clearTimeout(this.pendingDragStart.delayTimer);
         }
@@ -269,7 +269,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param x
      * @param y
      */
-    onDragStart = (event: PointerEvent, x: number, y: number): void => {
+    private onDragStart = (event: PointerEvent, x: number, y: number): void => {
         const target = event.target;
 
         //left mouse
@@ -327,7 +327,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param x
      * @param y
      */
-    onDragMove = (event: PointerEvent, x: number, y: number): void => {
+    private onDragMove = (event: PointerEvent, x: number, y: number): void => {
 
         if (!this.pendingDragStart && !this.draggedElement || event.pointerId !== this.activePointerId) {
             return;
@@ -444,7 +444,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param event pointerup, when omitted the drag is ended regardless of the pointer
      */
-    onDragEnd = (event?: PointerEvent): void => {
+    private onDragEnd = (event?: PointerEvent): void => {
         if (event && event.pointerId !== this.activePointerId) {
             return;
         }
@@ -482,7 +482,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param sourceElement
      */
-    hideSourceElement = (sourceElement: HTMLElement): void => {
+    private hideSourceElement = (sourceElement: HTMLElement): void => {
         this.sourceElementOriginalDisplay.set(sourceElement, {
             value: sourceElement.style.getPropertyValue('display'),
             priority: sourceElement.style.getPropertyPriority('display')
@@ -497,7 +497,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param sourceElement
      */
-    showSourceElement = (sourceElement: HTMLElement): void => {
+    private showSourceElement = (sourceElement: HTMLElement): void => {
         const originalDisplay = this.sourceElementOriginalDisplay.get(sourceElement);
 
         sourceElement.removeAttribute(this.sourceElementAttribute);
@@ -521,7 +521,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param previewElementOriginalList list where the item was dragged from
      * @param draggedElementOriginalIndex
      */
-    finishDrop = (
+    private finishDrop = (
         previewElement: HTMLElement,
         draggedElement: HTMLElement,
         sourceElement: HTMLElement,
@@ -576,7 +576,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param payload
      */
-    defaultApplyMove = (payload: DropPayload): void => {
+    private defaultApplyMove = (payload: DropPayload): void => {
         payload.to.parent.insertBefore(payload.item, payload.to.before);
     };
 
@@ -587,7 +587,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param y
      * @param list
      */
-    placeElementToList = (previewElement: HTMLElement, y: number, list: HTMLElement): void => {
+    private placeElementToList = (previewElement: HTMLElement, y: number, list: HTMLElement): void => {
         const listItems = Array.from(this.searchListItems(list) as NodeList) as HTMLElement[];
         const previewElementList = this.previewElementList as HTMLElement;
         const previewElementListItems = Array.from(this.searchListItems(previewElementList) as NodeList) as HTMLElement[];
@@ -626,7 +626,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param listItem
      * @param previewElement
      */
-    replaceElement = (y: number, listItem: HTMLElement, previewElement: HTMLElement): void => {
+    private replaceElement = (y: number, listItem: HTMLElement, previewElement: HTMLElement): void => {
         const listItemParentElement = listItem.parentNode as HTMLElement;
         const list = this.searchListOfItem(listItem) as HTMLElement;
         const listItems = Array.from(this.searchListItems(list) as NodeList) as HTMLElement[];
@@ -691,7 +691,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param x
      * @param y
      */
-    createDraggedElement = (list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement => {
+    private createDraggedElement = (list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement => {
         window.getSelection()?.removeAllRanges();
 
         const draggedElement = this.createDraggedCopy(target);
@@ -753,7 +753,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param target
      */
-    createDraggedCopy = (target: HTMLElement): HTMLElement => {
+    private createDraggedCopy = (target: HTMLElement): HTMLElement => {
         const copy = target.cloneNode(true) as HTMLElement;
 
         //duplicate ids would break labels, aria and css selectors
@@ -780,7 +780,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * Create placeholder element
      *
      */
-    createPreviewElement = (list: HTMLElement, referenceElement: HTMLElement): HTMLElement => {
+    private createPreviewElement = (list: HTMLElement, referenceElement: HTMLElement): HTMLElement => {
         const el = document.createElement('div');
         el.className = referenceElement.className;
 
@@ -840,7 +840,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * Reset Dragged item attributes
      *
      */
-    resetDraggingState = (): void => {
+    private resetDraggingState = (): void => {
         this.draggedElement?.removeAttribute(this.draggedElementAttribute);
         this.draggedElement?.removeAttribute(this.ignoreElementAttribute);
         this.draggedElement = null;
@@ -869,7 +869,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      * @param x
      * @param y
      */
-    updateDraggedElementPosition = (draggedElement: HTMLElement, x: number, y: number): void => {
+    private updateDraggedElementPosition = (draggedElement: HTMLElement, x: number, y: number): void => {
         draggedElement.style.transform = `translate(${x - this.draggedElementPosition.offsetX}px, ${y - this.draggedElementPosition.offsetY}px)`;
     };
 
@@ -878,7 +878,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param listId
      */
-    searchList = (listId: string): HTMLElement | null => {
+    private searchList = (listId: string): HTMLElement | null => {
         const selector = `[${this.listAttribute}="${CSS.escape(listId)}"]`;
 
         if (this.root.matches(selector)) {
@@ -895,7 +895,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param listItem
      */
-    searchListOfItem = (listItem: HTMLElement): HTMLElement | null => {
+    private searchListOfItem = (listItem: HTMLElement): HTMLElement | null => {
         const listId = String(listItem.getAttribute(this.listIdAttribute));
 
         return listItem.closest<HTMLElement>(`[${this.listAttribute}="${CSS.escape(listId)}"]`) ?? this.searchList(listId);
@@ -909,7 +909,7 @@ export class SimpleDragAndDrop implements SimpleDragAndDropInterface, EmitterInt
      *
      * @param list
      */
-    searchListItems = (list: HTMLElement): NodeListOf<HTMLElement> | null => {
+    private searchListItems = (list: HTMLElement): NodeListOf<HTMLElement> | null => {
         const listId = CSS.escape(list.getAttribute(this.listAttribute) as string);
 
         return list.querySelectorAll(

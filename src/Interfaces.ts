@@ -3,52 +3,16 @@
 export interface SimpleDragAndDropInterface {
     options: SDDOptionsInterface;
 
+    /** start listening for drags on root, called by the constructor */
     init(): void;
 
+    /** stop listening for drags, a running drag is cancelled */
     clearEventListeners(): void;
 
-    addDocumentListeners(): void;
-
-    removeDocumentListeners(): void;
-
-    cancelPendingDrag(): void;
-
+    /** cancel a running drag without a drop */
     cancelDrag(): void;
 
-    onDragStart(event: PointerEvent, x: number, y: number): void;
-
-    onDragMove(event: PointerEvent, x: number, y: number): void;
-
-    onDragEnd(event?: PointerEvent): void;
-
-    finishDrop(previewElement: HTMLElement, draggedElement: HTMLElement, sourceElement: HTMLElement, previewElementList: HTMLElement, previewElementOriginalList: HTMLElement, draggedElementOriginalIndex: number): DropPayload;
-
-
-    createDraggedCopy(target: HTMLElement): HTMLElement;
-
-    hideSourceElement(sourceElement: HTMLElement): void;
-
-    showSourceElement(sourceElement: HTMLElement): void;
-
-    defaultApplyMove(payload: DropPayload): void;
-
-    placeElementToList(previewElement: HTMLElement, y: number, list: HTMLElement): void;
-
-    replaceElement(y: number, listItem: HTMLElement, previewElement: HTMLElement): void;
-
-    createDraggedElement(list: HTMLElement, target: HTMLElement, x: number, y: number): HTMLElement;
-
-    createPreviewElement(list: HTMLElement, referenceElement: HTMLElement): HTMLElement;
-
-    resetDraggingState(): void;
-
-    updateDraggedElementPosition(draggedElement: HTMLElement, x: number, y: number): void;
-
-    searchList(listId: string): HTMLElement | null;
-
-    searchListOfItem(listItem: HTMLElement): HTMLElement | null;
-
-    searchListItems(list: HTMLElement): NodeListOf<HTMLElement> | null;
+    on: EmitterInterface['on'];
 }
 
 export interface SDDOptionsInterface {
