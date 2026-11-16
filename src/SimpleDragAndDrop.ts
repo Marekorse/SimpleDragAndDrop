@@ -30,6 +30,8 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
     public readonly dragThreshold: number;
     public readonly touchDelay: number;
     public readonly mouseDelay: number;
+    public readonly autoScrollSpeed: number;
+    public readonly autoScrollThreshold: number;
     private pendingDragStart: {
         listItem: HTMLElement;
         list: HTMLElement;
@@ -103,6 +105,7 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
 
     on!: EmitterInterface['on'];
     private emit!: EmitterInterface['emit'];
+    private clear!: EmitterInterface['clear'];
 
     /**
      * Constructor
@@ -128,6 +131,8 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
         this.dragThreshold = options.dragThreshold ?? 5;
         this.touchDelay = options.touchDelay ?? 200;
         this.mouseDelay = options.mouseDelay ?? 0;
+        this.autoScrollSpeed = options.autoScrollSpeed ?? 500;
+        this.autoScrollThreshold = options.autoScrollThreshold ?? 50;
         this.previewElement = null;
         this.previewElementList = null;
         this.previewElementOriginalList = null;
@@ -164,7 +169,7 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
         this.listItemActionBtnAttribute = 'data-list-item-action-btn';
 
         //AUTO SCROLLER
-        this.autoScroller = new AutoScroller(500, 50);
+        this.autoScroller = new AutoScroller(this.autoScrollSpeed, this.autoScrollThreshold);
 
         //ELEMENTS ANIMATOR
         this.ignoreElementAttribute = 'data-el-ignore';
@@ -227,7 +232,7 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
     /**
      * Cancel the drag without a drop - the DOM is restored to the state before dragging
      *
-     * applyMove is not called and the 'drop' event is not emitted.
+     * applyMove is not called, the 'dragCancel' event is emitted instead of 'drop'.
      * Works also while the copy flies to the drop position.
      */
     cancelDrag = (): void => {
@@ -251,14 +256,18 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
         previewElement.remove();
         this.showSourceElement(sourceElement);
         this.resetDraggingState();
+
+        this.emit('dragCancel', sourceElement);
     };
 
     /**
-     * Remove all event listeners(for SPA), a running drag is cancelled.
+     * Destroy the instance (for SPA) - stops listening for drags, a running drag is cancelled
+     * and all listeners added by on are removed.
      */
-    clearEventListeners = (): void => {
+    destroy = (): void => {
         this.root.removeEventListener('pointerdown', this.handlePointerDown);
         this.cancelDrag();
+        this.clear();
     };
 
     /**

@@ -4,8 +4,8 @@ export interface SimpleDragAndDropInterface {
     /** start listening for drags on root, called by the constructor */
     init(): void;
 
-    /** stop listening for drags, a running drag is cancelled */
-    clearEventListeners(): void;
+    /** stop listening for drags, a running drag is cancelled and all event listeners are removed */
+    destroy(): void;
 
     /** cancel a running drag without a drop */
     cancelDrag(): void;
@@ -31,6 +31,10 @@ export interface SDDOptionsInterface {
      * Moving the pointer earlier cancels the drag. 0 = drag starts immediately.
      */
     mouseDelay?: number;
+    /** auto scroll speed in px per second, default 500 */
+    autoScrollSpeed?: number;
+    /** distance in px from the edge of the viewport or a scrollable container where auto scroll starts, default 50 */
+    autoScrollThreshold?: number;
     applyMove?: (payload: DropPayload) => void;
 }
 
@@ -108,6 +112,8 @@ export interface EmitterInterface {
     on(eventName: string, listener: (data: any) => void): void;
 
     emit(eventName: string, data: any): void;
+
+    clear(): void;
 }
 
 export interface EmitterEventInterface {

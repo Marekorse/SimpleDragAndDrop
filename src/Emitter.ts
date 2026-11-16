@@ -1,7 +1,7 @@
 import {EmitterInterface, EmitterEventInterface} from './Interfaces';
 
 export const createEmitter = (): EmitterInterface => {
-    const events: EmitterEventInterface = {};
+    let events: EmitterEventInterface = {};
 
     /**
      * Creates a custom listener for an event.
@@ -30,8 +30,16 @@ export const createEmitter = (): EmitterInterface => {
         }
     };
 
+    /**
+     * Removes all listeners of all events.
+     */
+    const clear = (): void => {
+        events = {};
+    };
+
     return {
         on,
         emit,
+        clear,
     };
 };
