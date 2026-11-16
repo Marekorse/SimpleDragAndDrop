@@ -20,7 +20,6 @@ import {
 export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces';
 
  export class SimpleDragAndDrop implements SimpleDragAndDropInterface {
-    public readonly options!: SDDOptionsInterface;
     public readonly root: HTMLElement;
     public readonly applyMove: (payload: DropPayload) => void;
     public readonly animationDuration: number;

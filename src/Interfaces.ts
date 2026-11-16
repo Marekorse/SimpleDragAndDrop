@@ -1,8 +1,6 @@
 /** ----- Interfaces ----- **/
 
 export interface SimpleDragAndDropInterface {
-    options: SDDOptionsInterface;
-
     /** start listening for drags on root, called by the constructor */
     init(): void;
 
