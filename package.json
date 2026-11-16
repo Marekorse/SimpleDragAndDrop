@@ -21,7 +21,7 @@
   "scripts": {
     "build": "tsdown",
     "prepublishOnly": "npm run build",
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "echo \"No tests yet. It works on my machine :).\" && exit 0"
   },
   "repository": {
     "type": "git",
