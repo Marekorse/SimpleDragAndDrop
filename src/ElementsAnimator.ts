@@ -1,4 +1,4 @@
-import {ElementsAnimatorInterface, Rect} from './Interfaces';
+import {ElementsAnimatorInterface, OriginalInlineStyles, Rect} from './Interfaces';
 import {getActualPosition} from './Helpers';
 
 export class ElementsAnimator implements ElementsAnimatorInterface {
@@ -6,6 +6,12 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
     public readonly animationAttribute: string;
     public readonly isMovedAttribute: string;
     public readonly ignoreAttribute: string;
+
+    /**
+     * Inline transform and transition of elements before the animator touched them,
+     * restored when the animation ends, so the user styles are not lost.
+     */
+    private readonly originalStyles = new WeakMap<HTMLElement, OriginalInlineStyles>();
 
     /**
      * Constructor
@@ -45,14 +51,72 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
     };
 
     /**
-     * Reset element animations
+     * Save the inline transform and transition of the element, only when it is not animated already
+     * (a running animation has its own values in the inline styles)
+     *
+     * @param el
+     */
+    private saveOriginalStyles = (el: HTMLElement): void => {
+        if (this.originalStyles.has(el)) {
+            return;
+        }
+
+        this.originalStyles.set(el, {
+            transform: {
+                value: el.style.getPropertyValue('transform'),
+                priority: el.style.getPropertyPriority('transform')
+            },
+            transition: {
+                value: el.style.getPropertyValue('transition'),
+                priority: el.style.getPropertyPriority('transition')
+            }
+        });
+    };
+
+    /**
+     * Reset element animations - the original inline transform and transition are restored
+     *
+     * Elements whose styles were not saved (the dragged copy) are left as they are.
      *
      * @param target
      */
-
     removeAnimation = (target: HTMLElement): void => {
-        target.style.transition = '';
-        target.style.transform = '';
+        const original = this.originalStyles.get(target);
+
+        if (!original) {
+            return;
+        }
+
+        //empty value removes the property, so an element without inline styles stays without them
+        target.style.setProperty('transition', original.transition.value, original.transition.priority);
+        target.style.setProperty('transform', original.transform.value, original.transform.priority);
+        this.originalStyles.delete(target);
+    };
+
+    /**
+     * Translation composed with the original inline transform of the element
+     *
+     * @param el
+     * @param x
+     * @param y
+     */
+    private getTransform = (el: HTMLElement, x: number, y: number): string => {
+        const originalTransform = this.originalStyles.get(el)?.transform.value;
+        const translate = `translate3d(${x}px, ${y}px, 0px)`;
+
+        return originalTransform && originalTransform !== 'none' ? `${translate} ${originalTransform}` : translate;
+    };
+
+    /**
+     * Transition of the transform, the original inline transitions of other properties are kept
+     *
+     * @param el
+     */
+    private getTransition = (el: HTMLElement): string => {
+        const originalTransition = this.originalStyles.get(el)?.transition.value;
+        const transition = `transform ${this.animationDuration}ms ease`;
+
+        return originalTransition ? `${originalTransition}, ${transition}` : transition;
     };
 
     /**
@@ -74,8 +138,8 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
      */
     animate = (el: HTMLElement, x: number = 0, y: number = 0, after?: () => void): void => {
         el.setAttribute(this.isMovedAttribute, '');
-        el.style.transition = `transform ${this.animationDuration}ms ease`;
-        el.style.transform = `translate3d(${x}px, ${y}px, 0px)`;
+        el.style.transition = this.getTransition(el);
+        el.style.transform = this.getTransform(el, x, y);
 
         //reset animation state after end
         if (el.hasAttribute(this.animationAttribute)) {
@@ -120,8 +184,9 @@ export class ElementsAnimator implements ElementsAnimatorInterface {
                 return false;
             }
 
+            this.saveOriginalStyles(el);
             el.setAttribute(this.isMovedAttribute, '');
-            el.style.transform = `translate3d(${oldPosition.x - newPosition.x}px, ${oldPosition.y - newPosition.y}px, 0px)`;
+            el.style.transform = this.getTransform(el, oldPosition.x - newPosition.x, oldPosition.y - newPosition.y);
 
             return true;
         });

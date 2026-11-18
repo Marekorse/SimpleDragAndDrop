@@ -61,6 +61,18 @@ export interface Rect {
     h: number;
 }
 
+/** inline style value with its priority (important) */
+export interface InlineStyleValue {
+    value: string;
+    priority: string;
+}
+
+/** inline styles of an element before the animator touched them */
+export interface OriginalInlineStyles {
+    transform: InlineStyleValue;
+    transition: InlineStyleValue;
+}
+
 export interface ElementsAnimatorInterface {
     animationDuration: number;
     animationAttribute: string;
