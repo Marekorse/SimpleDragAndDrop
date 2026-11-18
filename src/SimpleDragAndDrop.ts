@@ -13,6 +13,7 @@ import {
 import {
     DropPayload,
     EmitterInterface,
+    InlineStyleValue,
     SDDOptionsInterface,
     SimpleDragAndDropInterface
 } from './Interfaces';
@@ -51,7 +52,9 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
         directionY: number;
     };
     private sourceElement: HTMLElement | null;
-    private readonly sourceElementOriginalDisplay = new WeakMap<HTMLElement, { value: string; priority: string }>();
+    private readonly sourceElementOriginalDisplay = new WeakMap<HTMLElement, InlineStyleValue>();
+    /** list ids already reported as missing, so the warning is not repeated on every pointermove */
+    private readonly missingListIds = new Set<string>();
     private previewElement: HTMLElement | null;
     private previewElementList: HTMLElement | null;
     private previewElementOriginalList: HTMLElement | null;
@@ -405,19 +408,21 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
             const foundItem = searchParentElement(
                 target,
                 (el) =>
-                    el.hasAttribute(this.listItemAttribute) || el.hasAttribute(this.listAttribute) || el.hasAttribute(this.previewElementAttribute)
+                    (el.hasAttribute(this.listItemAttribute) && el.hasAttribute(this.listIdAttribute))
+                    || el.hasAttribute(this.listAttribute)
+                    || el.hasAttribute(this.previewElementAttribute)
             );
 
-            //lists and items of other instances (also nested ones) are ignored
-            const item = foundItem && this.isOwnElement(foundItem) ? foundItem : null;
+            const ownItem = foundItem && this.isOwnElement(foundItem) ? foundItem : null;
+            const list = ownItem ? this.searchListOfTarget(ownItem) : null;
 
+            const item = list ? ownItem : null;
 
-            if (item && item !== previewElement && !this.elementsAnimator.isMoved(item, previewElement)) {
+            if (item && list && item !== previewElement && !this.elementsAnimator.isMoved(item, previewElement)) {
                 //SIMULATION OF DRAGENTER EVENT
                 const dragEnter = previewElement !== item && this.enteredTarget !== item;
 
                 this.enteredTarget = item;
-                const list = item.hasAttribute(this.listAttribute) ? item : this.searchListOfItem(item)!;
                 const sharedGroup = previewElement.getAttribute(this.previewElementListSharedAttribute);
                 const isShared = sharedGroup !== null
                     ? sharedGroup === list.getAttribute(this.listSharedAttribute)
@@ -920,6 +925,32 @@ export type {DropPayload, DropPosition, SDDOptionsInterface} from './Interfaces'
         const listId = String(listItem.getAttribute(this.listIdAttribute));
 
         return listItem.closest<HTMLElement>(`[${this.listAttribute}="${CSS.escape(listId)}"]`) ?? this.searchList(listId);
+    };
+
+    /**
+     * Search List Element of a drag target - the list itself or the list of an item
+     *
+     * Warns once per list id when the list of an item does not exist (typo in data-list-id).
+     *
+     * @param target list, list item or preview element
+     */
+    private searchListOfTarget = (target: HTMLElement): HTMLElement | null => {
+        if (target.hasAttribute(this.listAttribute)) {
+            return target;
+        }
+
+        const list = this.searchListOfItem(target);
+
+        if (!list) {
+            const listId = String(target.getAttribute(this.listIdAttribute));
+
+            if (!this.missingListIds.has(listId)) {
+                this.missingListIds.add(listId);
+                console.warn(`[SimpleDragAndDrop] list with data-list="${listId}" was not found, the item is ignored.`, target);
+            }
+        }
+
+        return list;
     };
 
     /**
